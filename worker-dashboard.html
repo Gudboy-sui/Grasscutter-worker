@@ -383,6 +383,95 @@ body::after{
 }
 .spinner-sm{display:inline-block;width:14px;height:14px;border:2px solid var(--bark);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
 @keyframes spin{to{transform:rotate(360deg);}}
+
+/* ── SETUP POPUP ── */
+#setup-overlay{
+  position:fixed;inset:0;z-index:250;
+  background:rgba(0,0,0,.85);
+  display:flex;align-items:flex-end;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .3s;
+}
+#setup-overlay.open{opacity:1;pointer-events:all;}
+.setup-box{
+  background:var(--earth);border:1px solid var(--clay);
+  border-radius:20px 20px 0 0;
+  padding:28px 22px 48px;
+  width:100%;max-width:480px;
+  transform:translateY(40px);transition:transform .3s;
+  position:relative;overflow:hidden;
+}
+#setup-overlay.open .setup-box{transform:translateY(0);}
+.setup-box::before{
+  content:'';position:absolute;top:-50px;right:-30px;
+  width:160px;height:160px;
+  background:radial-gradient(circle,rgba(232,137,12,.1) 0%,transparent 70%);
+  border-radius:50%;pointer-events:none;
+}
+.setup-emoji{font-size:2.2rem;display:block;margin-bottom:10px;}
+.setup-title{
+  font-family:var(--font-display);font-size:1.3rem;font-weight:800;
+  color:var(--cream);letter-spacing:-0.5px;margin-bottom:6px;
+}
+.setup-title em{color:var(--amber);font-style:italic;}
+.setup-sub{
+  font-size:.83rem;color:var(--cream-dim);line-height:1.6;margin-bottom:22px;
+}
+.setup-field{margin-bottom:18px;}
+.setup-field label{
+  display:block;font-family:var(--font-mono);font-size:.6rem;
+  color:var(--amber);text-transform:uppercase;letter-spacing:2px;margin-bottom:7px;
+}
+.setup-field input[type=time]{
+  width:100%;background:var(--bark);border:1px solid var(--clay);
+  color:var(--cream);font-family:var(--font-mono);font-size:1.3rem;
+  padding:13px 14px;border-radius:10px;outline:none;
+  transition:border-color .2s;-webkit-appearance:none;
+  letter-spacing:2px;
+}
+.setup-field input[type=time]:focus{border-color:var(--amber);}
+.setup-hint{
+  font-family:var(--font-mono);font-size:.57rem;
+  color:var(--cream-dim);margin-top:5px;display:block;line-height:1.5;
+}
+.btn-setup{
+  width:100%;background:var(--sage);border:none;color:#0d1f0d;
+  font-family:var(--font-mono);font-size:.72rem;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:15px;border-radius:12px;cursor:pointer;
+  transition:background .2s;margin-top:6px;
+}
+.btn-setup:hover{background:#8ecb8b;}
+.btn-setup:disabled{opacity:.5;cursor:not-allowed;}
+.setup-cal-section{
+  margin-top:20px;padding-top:18px;
+  border-top:1px solid var(--bark);
+}
+.setup-cal-title{
+  font-family:var(--font-mono);font-size:.6rem;
+  color:var(--amber);text-transform:uppercase;letter-spacing:2px;
+  display:block;margin-bottom:12px;
+}
+.cal-btns{display:flex;flex-direction:column;gap:10px;}
+.btn-cal{
+  width:100%;background:rgba(232,137,12,.1);
+  border:1px solid rgba(232,137,12,.3);
+  color:var(--amber-soft);
+  font-family:var(--font-mono);font-size:.68rem;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:13px;border-radius:12px;cursor:pointer;
+  transition:all .2s;text-decoration:none;
+  display:block;text-align:center;
+}
+.btn-cal:hover{background:rgba(232,137,12,.2);}
+.setup-done-btn{
+  width:100%;background:var(--bark);border:1px solid var(--clay);
+  color:var(--cream-dim);
+  font-family:var(--font-mono);font-size:.68rem;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:13px;border-radius:12px;cursor:pointer;
+  transition:all .2s;margin-top:10px;
+}
+.setup-done-btn:hover{border-color:var(--sage);color:var(--sage);}
 </style>
 </head>
 <body>
@@ -407,6 +496,41 @@ body::after{
     </div>
     <div class="auth-loading" id="auth-loading" style="display:none;">
       <span class="spinner-sm"></span> Signing in...
+    </div>
+  </div>
+</div>
+
+<!-- ── SETUP POPUP ── -->
+<div id="setup-overlay">
+  <div class="setup-box">
+    <span class="setup-emoji">⏰</span>
+    <div class="setup-title">Set Your <em>Reminders</em></div>
+    <div class="setup-sub" id="setup-sub">The farm is active! Choose the times you want to be reminded for your daily duties. This only takes a second — and it'll keep the animals fed on time every day.</div>
+
+    <div id="setup-form">
+      <div class="setup-field">
+        <label>🌅 Morning Reminder</label>
+        <input type="time" id="setup-morning" value="06:10"/>
+        <span class="setup-hint">Quick 5-min check before school — water + health scan only.</span>
+      </div>
+      <div class="setup-field">
+        <label>🌆 Evening Reminder</label>
+        <input type="time" id="setup-evening" value="16:00"/>
+        <span class="setup-hint">Main session — full feed, clean, all tasks. Usually 15–20 mins.</span>
+      </div>
+      <button class="btn-setup" id="btn-setup-save" onclick="saveSetup()">Confirm My Times →</button>
+    </div>
+
+    <div id="setup-calendar" style="display:none;">
+      <div class="setup-cal-section">
+        <span class="setup-cal-title">📅 Add to Your Phone Calendar</span>
+        <p style="font-size:.8rem;color:var(--cream-dim);line-height:1.6;margin-bottom:14px;">Tap the button below to add recurring daily reminders to your phone calendar. Your alarm will fire every day at the times you chose.</p>
+        <div class="cal-btns">
+          <a id="cal-google" href="#" target="_blank" class="btn-cal">📅 Add to Google Calendar</a>
+          <a id="cal-ics" href="#" download="farm-reminders.ics" class="btn-cal">📲 Download for iPhone / Other</a>
+        </div>
+        <button class="setup-done-btn" onclick="completeSetup()">✅ Done — Take me to the dashboard</button>
+      </div>
     </div>
   </div>
 </div>
@@ -571,6 +695,7 @@ async function checkSession() {
 
 async function onLoggedIn() {
   await loadTodayFlags();
+  await checkSetup();
   document.getElementById('auth-gate').classList.add('hidden');
   // init all UI
   updateClock(); setInterval(updateClock, 1000);
@@ -584,6 +709,149 @@ async function onLoggedIn() {
   loadFact();
   loadCorner();
 }
+
+/* ══ SETUP LOGIC ═════════════════════════════════════ */
+let workerConfig = null;
+
+async function checkSetup() {
+  if (!currentUser) return;
+
+  // Load farm_config to see if farm has started
+  const { data: farmData } = await sb
+    .from('farm_config')
+    .select('farm_started')
+    .limit(1)
+    .single();
+
+  // If farm not started yet, don't show setup
+  if (!farmData || !farmData.farm_started) return;
+
+  // Load worker's own config
+  const { data: wc } = await sb
+    .from('worker_config')
+    .select('*')
+    .eq('user_id', currentUser.id)
+    .single();
+
+  workerConfig = wc;
+
+  // If setup not done yet, show popup
+  if (!wc || !wc.setup_done) {
+    document.getElementById('setup-overlay').classList.add('open');
+  }
+}
+
+async function saveSetup() {
+  const morning = document.getElementById('setup-morning').value || '06:10';
+  const evening = document.getElementById('setup-evening').value || '16:00';
+  const btn = document.getElementById('btn-setup-save');
+  btn.disabled = true; btn.textContent = 'Saving...';
+
+  const { error } = await sb.from('worker_config').upsert({
+    user_id:      currentUser.id,
+    morning_time: morning,
+    evening_time: evening,
+    setup_done:   true,
+    updated_at:   new Date().toISOString(),
+  }, { onConflict: 'user_id' });
+
+  if (error) {
+    btn.disabled = false; btn.textContent = 'Confirm My Times →';
+    toast('❌ Could not save. Try again.', true); return;
+  }
+
+  workerConfig = { morning_time: morning, evening_time: evening, setup_done: true };
+
+  // Build calendar links
+  buildCalendarLinks(morning, evening);
+
+  // Show calendar section
+  document.getElementById('setup-form').style.display = 'none';
+  document.getElementById('setup-calendar').style.display = 'block';
+
+  // Request browser notification permission
+  if ('Notification' in window && Notification.permission === 'default') {
+    Notification.requestPermission();
+  }
+}
+
+function buildCalendarLinks(morning, evening) {
+  const [mh, mm] = morning.split(':').map(Number);
+  const [eh, em] = evening.split(':').map(Number);
+
+  // Format for Google Calendar: HHMMSS
+  function gcTime(h, m) {
+    return `${String(h).padStart(2,'0')}${String(m).padStart(2,'0')}00`;
+  }
+
+  // Today as start date YYYYMMDD
+  const now = new Date();
+  const startDate = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
+
+  // Google Calendar links (recurring daily)
+  const mStart = `${startDate}T${gcTime(mh,mm)}`;
+  const mEnd   = `${startDate}T${gcTime(mh, mm+10 > 59 ? mh+1 : mm+10)}`;
+  const eStart = `${startDate}T${gcTime(eh,em)}`;
+  const eEnd   = `${startDate}T${gcTime(eh, em+20 > 59 ? eh+1 : em+20)}`;
+
+  const gMorning = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=🌅+Farm+Morning+Check&dates=${mStart}/${mEnd}&recur=RRULE:FREQ=DAILY&details=Water+check+%2B+health+scan.+Quick+5+mins+before+school.`;
+  const gEvening = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=🌆+Farm+Evening+Duties&dates=${eStart}/${eEnd}&recur=RRULE:FREQ=DAILY&details=Full+feed%2C+clean%2C+all+tasks.+15-20+mins.`;
+
+  document.getElementById('cal-google').href =
+    `${gMorning}\n${gEvening}`.split('\n')[0]; // morning first
+
+  // Make two separate Google links
+  document.getElementById('cal-google').onclick = function(e) {
+    e.preventDefault();
+    window.open(gMorning, '_blank');
+    setTimeout(() => window.open(gEvening, '_blank'), 800);
+  };
+
+  // ICS file for iPhone/others
+  function icsTime(h, m) {
+    return `${startDate}T${String(h).padStart(2,'0')}${String(m).padStart(2,'0')}00`;
+  }
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//Farm Dashboard//EN',
+    'BEGIN:VEVENT',
+    `DTSTART:${icsTime(mh,mm)}`,
+    `DTEND:${icsTime(mh, mm+10 >= 60 ? mm+10-60 : mm+10)}`,
+    'RRULE:FREQ=DAILY',
+    'SUMMARY:🌅 Farm Morning Check',
+    'DESCRIPTION:Water check + health scan. Quick 5 mins before school.',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT0M',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Farm Morning Check',
+    'END:VALARM',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    `DTSTART:${icsTime(eh,em)}`,
+    `DTEND:${icsTime(eh, em+20 >= 60 ? em+20-60 : em+20)}`,
+    'RRULE:FREQ=DAILY',
+    'SUMMARY:🌆 Farm Evening Duties',
+    'DESCRIPTION:Full feed, clean, all tasks. 15-20 mins.',
+    'BEGIN:VALARM',
+    'TRIGGER:-PT0M',
+    'ACTION:DISPLAY',
+    'DESCRIPTION:Farm Evening Duties',
+    'END:VALARM',
+    'END:VEVENT',
+    'END:VCALENDAR',
+  ].join('\r\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar' });
+  document.getElementById('cal-ics').href = URL.createObjectURL(blob);
+}
+
+function completeSetup() {
+  document.getElementById('setup-overlay').classList.remove('open');
+  toast('✅ Reminders set! Check your calendar app.');
+}
+
 
 /* ══ SUPABASE FLAG HELPERS ═══════════════════════════ */
 async function loadTodayFlags() {
