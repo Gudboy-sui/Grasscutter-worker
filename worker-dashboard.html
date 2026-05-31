@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Farm Log — Worker</title>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 :root{
   --soil:#1a0f00;
@@ -312,9 +313,103 @@ body::after{
 .card:nth-child(3){animation-delay:.15s;}
 .card:nth-child(4){animation-delay:.2s;}
 .card:nth-child(5){animation-delay:.25s;}
+
+/* ── AUTH GATE ── */
+#auth-gate{
+  position:fixed;inset:0;z-index:300;
+  background:var(--soil);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+#auth-gate.hidden{display:none;}
+.auth-box{
+  background:var(--earth);border:1px solid var(--clay);
+  border-radius:20px;padding:32px 24px;width:100%;max-width:400px;
+  position:relative;overflow:hidden;
+}
+.auth-box::before{
+  content:'';position:absolute;top:-60px;right:-40px;
+  width:180px;height:180px;
+  background:radial-gradient(circle,rgba(232,137,12,.12) 0%,transparent 70%);
+  border-radius:50%;pointer-events:none;
+}
+.auth-logo{
+  font-family:var(--font-mono);font-size:.6rem;
+  color:var(--amber);letter-spacing:3px;text-transform:uppercase;
+  background:rgba(232,137,12,.1);border:1px solid rgba(232,137,12,.25);
+  padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:14px;
+}
+.auth-title{
+  font-family:var(--font-display);font-size:1.6rem;font-weight:800;
+  color:var(--cream);letter-spacing:-1px;margin-bottom:4px;
+}
+.auth-title em{color:var(--amber);font-style:italic;}
+.auth-sub{
+  font-family:var(--font-mono);font-size:.62rem;
+  color:var(--cream-dim);letter-spacing:.5px;margin-bottom:24px;
+}
+.auth-field{margin-bottom:14px;}
+.auth-field label{
+  display:block;font-family:var(--font-mono);font-size:.6rem;
+  color:var(--amber);text-transform:uppercase;letter-spacing:2px;margin-bottom:7px;
+}
+.auth-field input{
+  width:100%;background:var(--bark);border:1px solid var(--clay);
+  color:var(--cream);font-family:var(--font-body);font-size:.95rem;
+  padding:12px 14px;border-radius:10px;outline:none;transition:border-color .2s;
+  -webkit-appearance:none;
+}
+.auth-field input:focus{border-color:var(--amber);}
+.auth-field input::placeholder{color:var(--cream-dim);}
+.btn-auth{
+  width:100%;background:var(--sage);border:none;color:#0d1f0d;
+  font-family:var(--font-mono);font-size:.72rem;font-weight:700;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:14px;border-radius:12px;cursor:pointer;
+  transition:background .2s;margin-top:6px;
+}
+.btn-auth:hover{background:#8ecb8b;}
+.btn-auth:disabled{opacity:.5;cursor:not-allowed;}
+.auth-error{
+  font-family:var(--font-mono);font-size:.65rem;color:var(--danger);
+  margin-top:10px;background:rgba(224,82,82,.08);
+  border:1px solid rgba(224,82,82,.25);
+  padding:10px 12px;border-radius:8px;display:none;
+}
+.auth-error.show{display:block;}
+.auth-loading{
+  text-align:center;padding:20px 0;
+  font-family:var(--font-mono);font-size:.65rem;color:var(--cream-dim);
+}
+.spinner-sm{display:inline-block;width:14px;height:14px;border:2px solid var(--bark);border-top-color:var(--amber);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px;}
+@keyframes spin{to{transform:rotate(360deg);}}
 </style>
 </head>
 <body>
+
+<!-- ── AUTH GATE ── -->
+<div id="auth-gate">
+  <div class="auth-box">
+    <div class="auth-logo">🌿 Worker Log</div>
+    <div class="auth-title">Farm <em>Login</em></div>
+    <div class="auth-sub">Sign in to access your daily checklist.</div>
+    <div id="auth-form">
+      <div class="auth-field">
+        <label>Email</label>
+        <input type="email" id="auth-email" placeholder="your@email.com" autocomplete="email"/>
+      </div>
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" id="auth-password" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <button class="btn-auth" id="btn-signin" onclick="signIn()">Sign In</button>
+      <div class="auth-error" id="auth-error"></div>
+    </div>
+    <div class="auth-loading" id="auth-loading" style="display:none;">
+      <span class="spinner-sm"></span> Signing in...
+    </div>
+  </div>
+</div>
 
 <!-- HERO -->
 <div class="hero">
@@ -424,6 +519,103 @@ body::after{
 <div class="toast-wrap" id="toast-wrap"></div>
 
 <script>
+/* ══ SUPABASE ════════════════════════════════════════ */
+const { createClient } = supabase;
+const sb = createClient(
+  'https://pqiavaupmkgrkhnebfxs.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBxaWF2YXVwbWtncmtobmViZnhzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwNjMxNjMsImV4cCI6MjA4ODYzOTE2M30.qyZxl835adIPVTr78b5dQDltTLAYjW0XO0m-wQR2zWo'
+);
+
+let currentUser = null;
+
+/* ── Daily flags: stored in Supabase worker_checkins table ── */
+/* Format: { user_id, date, normal, special, report } */
+let todayFlags = { normal: false, special: false, report: false };
+
+/* ══ AUTH ════════════════════════════════════════════ */
+async function signIn() {
+  const email    = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  const errEl    = document.getElementById('auth-error');
+  errEl.classList.remove('show');
+
+  if (!email || !password) {
+    errEl.textContent = 'Please enter your email and password.';
+    errEl.classList.add('show'); return;
+  }
+
+  document.getElementById('auth-form').style.display    = 'none';
+  document.getElementById('auth-loading').style.display = 'block';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+
+  if (error) {
+    document.getElementById('auth-form').style.display    = 'block';
+    document.getElementById('auth-loading').style.display = 'none';
+    errEl.textContent = error.message;
+    errEl.classList.add('show'); return;
+  }
+
+  currentUser = data.user;
+  await onLoggedIn();
+}
+
+async function checkSession() {
+  const { data } = await sb.auth.getSession();
+  if (data.session) {
+    currentUser = data.session.user;
+    await onLoggedIn();
+  }
+  // No session → auth gate stays visible
+}
+
+async function onLoggedIn() {
+  await loadTodayFlags();
+  document.getElementById('auth-gate').classList.add('hidden');
+  // init all UI
+  updateClock(); setInterval(updateClock, 1000);
+  renderTasks('morning-tasks', MORNING_TASKS);
+  renderTasks('evening-tasks', EVENING_TASKS);
+  renderTasks('anytime-tasks', ANYTIME_TASKS);
+  renderSpecial();
+  renderReportSection();
+  refreshPills();
+  updateProgress();
+  loadFact();
+  loadCorner();
+}
+
+/* ══ SUPABASE FLAG HELPERS ═══════════════════════════ */
+async function loadTodayFlags() {
+  if (!currentUser) return;
+  const today = todayKey();
+  const { data } = await sb
+    .from('worker_checkins')
+    .select('normal, special, report')
+    .eq('user_id', currentUser.id)
+    .eq('date', today)
+    .single();
+  if (data) {
+    todayFlags.normal  = !!data.normal;
+    todayFlags.special = !!data.special;
+    todayFlags.report  = !!data.report;
+  } else {
+    todayFlags = { normal: false, special: false, report: false };
+  }
+}
+
+async function setFlag(flag) {
+  if (!currentUser) return;
+  const today = todayKey();
+  const update = { user_id: currentUser.id, date: today, [flag]: true };
+  await sb.from('worker_checkins').upsert(update, { onConflict: 'user_id,date' });
+  todayFlags[flag] = true;
+}
+
+function getFlag(flag) {
+  return todayFlags[flag] || false;
+}
+
 /* ══ CONFIG ══════════════════════════════════════════ */
 const CHECKIN_FORM = 'https://formspree.io/f/xnjrydve';
 const REPORT_FORM  = 'https://formspree.io/f/xnjryvqw';
@@ -519,7 +711,6 @@ function todayKey(){
   const d=new Date();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
-function lk(s){return`fw_${s}_${todayKey()}`;}
 
 function updateClock(){
   const n=new Date();
@@ -568,10 +759,10 @@ function updateProgress(){
   document.getElementById('prog-fill').style.width=`${(done/total)*100}%`;
   document.getElementById('prog-label').textContent=`${done}/${total}`;
   const allDone=done===total;
-  const normalDone=!!localStorage.getItem(lk('normal'));
+  const normalDone=getFlag('normal');
   document.getElementById('btn-normal').disabled=!allDone||normalDone;
   const sp=getSpecialTasks(new Date());
-  const specDone=!!localStorage.getItem(lk('special'));
+  const specDone=getFlag('special');
   document.getElementById('btn-special').disabled=!allDone||sp.length===0||specDone;
 }
 
@@ -591,18 +782,18 @@ function renderSpecial(){
 function refreshPills(){
   ['normal','special','report'].forEach(k=>{
     const pill=document.getElementById(`sp-${k}`);
-    if(localStorage.getItem(lk(k)))pill.classList.add('done');
+    if(getFlag(k))pill.classList.add('done');
     else pill.classList.remove('done');
   });
-  if(localStorage.getItem(lk('normal'))){
+  if(getFlag('normal')){
     const b=document.getElementById('btn-normal');
     b.textContent='✅ Normal Check-in Done';b.classList.add('btn-done-state');b.disabled=true;
   }
-  if(localStorage.getItem(lk('special'))){
+  if(getFlag('special')){
     const b=document.getElementById('btn-special');
     b.textContent='✅ Special Check-in Done';b.classList.add('btn-done-state');b.disabled=true;
   }
-  if(localStorage.getItem(lk('report'))){
+  if(getFlag('report')){
     const b=document.getElementById('btn-report-submit');
     if(b){b.textContent='✅ Report Submitted';b.classList.add('btn-done-state');b.disabled=true;}
   }
@@ -610,7 +801,7 @@ function refreshPills(){
 
 /* ══ WEEKLY REPORT RENDER ════════════════════════════ */
 function renderReportSection(){
-  const isToday=new Date().getDay()===0; // Sunday
+  const isToday=new Date().getDay()===0;
   const body=document.getElementById('report-body');
   if(!isToday){
     const daysUntil=7-new Date().getDay();
@@ -623,7 +814,7 @@ function renderReportSection(){
       </div>`;
     return;
   }
-  if(localStorage.getItem(lk('report'))){
+  if(getFlag('report')){
     body.innerHTML=`<div class="sunday-gate"><span class="sg-emoji">✅</span><div class="sg-title">Report Submitted</div><div class="sg-sub">Weekly report sent successfully. See you next Sunday.</div></div>`;
     return;
   }
@@ -650,7 +841,6 @@ function renderReportSection(){
     <div class="fg"><label class="fl">Manager Notes</label><textarea class="ft" id="r-notes" placeholder="Any observations, births, concerns..."></textarea></div>
     <button class="btn btn-amber" id="btn-report-submit">📤 Submit Weekly Report</button>
     </div>`;
-
   document.getElementById('btn-report-submit').addEventListener('click',submitReport);
 }
 
@@ -665,7 +855,7 @@ document.getElementById('btn-normal').addEventListener('click',async()=>{
   b.disabled=true;b.textContent='Sending...';
   try{
     await post(CHECKIN_FORM,{type:'normal_checkin',date:todayKey(),timestamp:new Date().toISOString(),tasks:ALL_TASKS.map(t=>t.id).join(',')});
-    localStorage.setItem(lk('normal'),'1');
+    await setFlag('normal');
     toast('✅ Normal check-in submitted. Good work today.');
     b.textContent='✅ Normal Check-in Done';b.classList.add('btn-done-state');
     refreshPills();updateProgress();
@@ -677,7 +867,7 @@ document.getElementById('btn-special').addEventListener('click',async()=>{
   b.disabled=true;b.textContent='Sending...';
   try{
     await post(CHECKIN_FORM,{type:'special_checkin',date:todayKey(),timestamp:new Date().toISOString(),tasks:getSpecialTasks(new Date()).join(' | ')});
-    localStorage.setItem(lk('special'),'1');
+    await setFlag('special');
     toast('⭐ Special check-in submitted!');
     b.textContent='✅ Special Check-in Done';b.classList.add('btn-done-state');
     refreshPills();
@@ -701,7 +891,7 @@ async function submitReport(){
       grain_days:document.getElementById('r-grain').value||'0',
       notes:document.getElementById('r-notes').value||'—',
     });
-    localStorage.setItem(lk('report'),'1');
+    await setFlag('report');
     toast('📤 Weekly report sent to owner!');
     renderReportSection();refreshPills();
   }catch{toast('❌ Failed. Try again.',true);b.disabled=false;b.textContent='📤 Submit Weekly Report';}
@@ -721,16 +911,7 @@ function loadCorner(){
 }
 
 /* ══ INIT ════════════════════════════════════════════ */
-updateClock();setInterval(updateClock,1000);
-renderTasks('morning-tasks',MORNING_TASKS);
-renderTasks('evening-tasks',EVENING_TASKS);
-renderTasks('anytime-tasks',ANYTIME_TASKS);
-renderSpecial();
-renderReportSection();
-refreshPills();
-updateProgress();
-loadFact();
-loadCorner();
+checkSession();
 </script>
 </body>
 </html>
