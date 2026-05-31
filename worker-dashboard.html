@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Farm Log — Worker</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --soil:#1a0f00;
+  --earth:#2c1a00;
+  --bark:#3d2600;
+  --clay:#5c3d1a;
+  --amber:#e8890c;
+  --amber-soft:#f5a830;
+  --cream:#f5ead8;
+  --cream-dim:#c4ad8a;
+  --sage:#7db87a;
+  --sage-dim:#3d6b3a;
+  --terracotta:#c45c2a;
+  --danger:#e05252;
+  --r:16px;
+  --font-display:'Fraunces',Georgia,serif;
+  --font-body:'DM Sans',sans-serif;
+  --font-mono:'DM Mono',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+
+body{
+  background:var(--soil);
+  color:var(--cream);
+  font-family:var(--font-body);
+  min-height:100vh;
+  padding-bottom:100px;
+  overflow-x:hidden;
+}
+
+/* ── TEXTURE OVERLAY ── */
+body::after{
+  content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='f'%3E%3CfeTurbulence baseFrequency='.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23f)' opacity='.06'/%3E%3C/svg%3E");
+  opacity:.5;
+}
+
+/* ── HERO ── */
+.hero{
+  position:relative;z-index:1;
+  padding:36px 20px 28px;
+  background:linear-gradient(175deg,var(--bark) 0%,var(--soil) 100%);
+  border-bottom:1px solid var(--clay);
+  overflow:hidden;
+}
+
+.hero::before{
+  content:'';position:absolute;
+  top:-60px;right:-40px;
+  width:200px;height:200px;
+  background:radial-gradient(circle,rgba(232,137,12,.15) 0%,transparent 70%);
+  border-radius:50%;
+}
+
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:20px;}
+
+.farm-id{
+  font-family:var(--font-mono);font-size:.6rem;
+  color:var(--amber);letter-spacing:3px;text-transform:uppercase;
+  background:rgba(232,137,12,.1);border:1px solid rgba(232,137,12,.25);
+  padding:4px 10px;border-radius:4px;display:inline-block;margin-bottom:8px;
+}
+
+.hero h1{
+  font-family:var(--font-display);font-size:1.9rem;font-weight:800;
+  color:var(--cream);line-height:1.1;letter-spacing:-1px;
+}
+.hero h1 em{color:var(--amber);font-style:italic;}
+
+.clock-pill{
+  text-align:right;flex-shrink:0;
+  background:rgba(255,255,255,.04);border:1px solid var(--clay);
+  border-radius:12px;padding:10px 14px;
+}
+#clock{font-family:var(--font-mono);font-size:1.4rem;color:var(--amber);letter-spacing:1px;display:block;}
+#date-line{font-family:var(--font-mono);font-size:.58rem;color:var(--cream-dim);margin-top:2px;letter-spacing:.5px;}
+
+/* ── FACT CARD ── */
+.fact-card{
+  margin-top:18px;
+  background:rgba(232,137,12,.08);
+  border:1px solid rgba(232,137,12,.2);
+  border-radius:12px;padding:14px 16px;
+  display:flex;gap:12px;align-items:flex-start;
+  animation:fadeSlide .5s ease;
+}
+.fact-icon{font-size:1.4rem;flex-shrink:0;margin-top:1px;}
+.fact-body{}
+.fact-label{font-family:var(--font-mono);font-size:.58rem;color:var(--amber);letter-spacing:2px;text-transform:uppercase;display:block;margin-bottom:4px;}
+.fact-text{font-size:.82rem;color:var(--cream-dim);line-height:1.55;}
+
+@keyframes fadeSlide{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── STATUS STRIP ── */
+.status-strip{
+  position:sticky;top:0;z-index:100;
+  background:var(--earth);
+  border-bottom:1px solid var(--bark);
+  padding:10px 16px;
+  display:flex;gap:8px;overflow-x:auto;
+  scrollbar-width:none;
+}
+.status-strip::-webkit-scrollbar{display:none;}
+
+.s-pill{
+  flex-shrink:0;
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--font-mono);font-size:.58rem;
+  letter-spacing:1px;text-transform:uppercase;
+  padding:5px 12px;border-radius:20px;
+  border:1px solid var(--bark);color:var(--cream-dim);
+  transition:all .3s;
+  background:transparent;
+}
+.s-pill .dot{width:6px;height:6px;border-radius:50%;background:var(--clay);flex-shrink:0;transition:background .3s;}
+.s-pill.done{border-color:var(--sage-dim);color:var(--sage);}
+.s-pill.done .dot{background:var(--sage);box-shadow:0 0 6px var(--sage);}
+
+/* ── CONTAINER ── */
+.wrap{padding:20px 16px;position:relative;z-index:1;max-width:600px;margin:0 auto;}
+
+/* ── SECTION CARD ── */
+.card{
+  background:var(--earth);
+  border:1px solid var(--bark);
+  border-radius:var(--r);
+  margin-bottom:16px;
+  overflow:hidden;
+  animation:fadeSlide .4s ease both;
+}
+
+.card-head{
+  padding:16px 18px 0;
+  display:flex;align-items:center;justify-content:space-between;
+}
+
+.card-label{
+  font-family:var(--font-mono);font-size:.6rem;
+  text-transform:uppercase;letter-spacing:2.5px;
+  color:var(--cream-dim);
+  display:flex;align-items:center;gap:7px;
+}
+.card-label .icon{font-size:.9rem;}
+
+.card-body{padding:14px 18px 18px;}
+
+/* ── SESSION DIVIDER ── */
+.session-tag{
+  font-family:var(--font-mono);font-size:.6rem;
+  text-transform:uppercase;letter-spacing:2px;
+  color:var(--amber);
+  display:flex;align-items:center;gap:8px;
+  margin:16px 0 10px;
+}
+.session-tag::after{content:'';flex:1;height:1px;background:var(--bark);}
+.session-tag:first-child{margin-top:0;}
+
+/* ── TASK ITEM ── */
+.task{
+  display:flex;align-items:center;gap:14px;
+  padding:11px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  cursor:pointer;
+  transition:opacity .15s;
+  user-select:none;
+}
+.task:last-child{border-bottom:none;}
+.task:active{opacity:.7;}
+
+.task-check{
+  width:26px;height:26px;flex-shrink:0;
+  border:2px solid var(--clay);border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .2s;background:transparent;
+}
+.task.done .task-check{background:var(--sage);border-color:var(--sage);}
+.task.done .task-check::after{content:'✓';color:#fff;font-size:.85rem;font-weight:700;}
+.task-check::after{content:'';} 
+
+.task-text{font-size:.9rem;line-height:1.4;color:var(--cream);transition:color .2s;}
+.task.done .task-text{color:var(--cream-dim);text-decoration:line-through;}
+
+/* ── PROGRESS ── */
+.prog-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.prog-track{flex:1;height:5px;background:var(--bark);border-radius:99px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--sage);border-radius:99px;width:0%;transition:width .4s ease;box-shadow:0 0 8px rgba(125,184,122,.5);}
+.prog-label{font-family:var(--font-mono);font-size:.65rem;color:var(--cream-dim);flex-shrink:0;}
+
+/* ── SPECIAL TASKS ── */
+.special-item{
+  display:flex;gap:10px;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,.04);
+  font-size:.88rem;line-height:1.5;color:var(--cream);
+}
+.special-item:last-child{border-bottom:none;}
+.special-bullet{color:var(--amber);flex-shrink:0;margin-top:1px;}
+
+.season-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(232,137,12,.1);border:1px solid rgba(232,137,12,.25);
+  color:var(--amber-soft);border-radius:20px;
+  padding:5px 12px;font-size:.7rem;font-family:var(--font-mono);
+  letter-spacing:1px;margin-bottom:14px;
+}
+
+.no-special{
+  font-family:var(--font-mono);font-size:.75rem;
+  color:var(--cream-dim);padding:10px 0;text-align:center;
+}
+
+/* ── REMINDERS ── */
+.reminder{
+  display:flex;gap:12px;align-items:flex-start;
+  padding:12px 14px;
+  background:rgba(232,137,12,.05);
+  border-left:3px solid var(--amber);
+  border-radius:0 8px 8px 0;
+  margin-bottom:8px;
+  font-size:.85rem;line-height:1.5;
+  color:var(--cream-dim);
+}
+.reminder:last-child{margin-bottom:0;}
+.reminder .ri{font-size:1rem;flex-shrink:0;}
+
+/* ── BUTTONS ── */
+.btn{
+  width:100%;padding:15px 20px;
+  border:none;border-radius:12px;
+  font-family:var(--font-display);
+  font-size:1rem;font-weight:600;
+  cursor:pointer;transition:all .2s;
+  position:relative;overflow:hidden;
+  letter-spacing:.3px;
+  margin-top:12px;
+}
+
+.btn-green{background:var(--sage);color:#0d1f0d;}
+.btn-green:not(:disabled):hover{background:#8ecb8b;transform:translateY(-1px);box-shadow:0 6px 20px rgba(125,184,122,.35);}
+
+.btn-amber{background:var(--amber);color:#1a0800;}
+.btn-amber:not(:disabled):hover{background:var(--amber-soft);transform:translateY(-1px);box-shadow:0 6px 20px rgba(232,137,12,.35);}
+
+.btn-outline{
+  background:transparent;
+  border:1.5px solid var(--clay);
+  color:var(--cream-dim);
+}
+.btn-outline:not(:disabled):hover{border-color:var(--amber);color:var(--amber);}
+
+.btn:disabled{opacity:.3;cursor:not-allowed;transform:none!important;box-shadow:none!important;}
+.btn-done-state{background:var(--bark)!important;color:var(--sage)!important;cursor:default!important;transform:none!important;box-shadow:none!important;}
+
+/* ── FORM ── */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.fg{margin-bottom:13px;}
+.fl{
+  display:block;font-family:var(--font-mono);font-size:.6rem;
+  text-transform:uppercase;letter-spacing:1.5px;
+  color:var(--cream-dim);margin-bottom:5px;
+}
+.fi,.fs,.ft{
+  width:100%;padding:11px 13px;
+  background:var(--bark);
+  border:1px solid var(--clay);border-radius:9px;
+  color:var(--cream);font-family:var(--font-body);font-size:.9rem;
+  outline:none;transition:border-color .2s;
+  -webkit-appearance:none;
+}
+.fi:focus,.fs:focus,.ft:focus{border-color:var(--amber);}
+.fs option{background:var(--bark);}
+.ft{resize:vertical;min-height:80px;}
+
+/* ── SUNDAY GATE ── */
+.sunday-gate{
+  text-align:center;padding:24px 16px;
+}
+.sg-emoji{font-size:2.5rem;display:block;margin-bottom:12px;}
+.sg-title{font-family:var(--font-display);font-size:1.1rem;font-weight:600;color:var(--cream);margin-bottom:8px;}
+.sg-sub{font-size:.8rem;color:var(--cream-dim);line-height:1.5;}
+.sg-countdown{
+  margin-top:14px;
+  font-family:var(--font-mono);font-size:.75rem;
+  color:var(--amber);
+  background:rgba(232,137,12,.1);border:1px solid rgba(232,137,12,.2);
+  border-radius:8px;padding:8px 14px;display:inline-block;
+}
+
+/* ── TOAST ── */
+.toast-wrap{position:fixed;bottom:28px;left:50%;transform:translateX(-50%);z-index:999;pointer-events:none;width:90%;max-width:340px;}
+.toast{
+  background:var(--bark);border:1px solid var(--clay);
+  border-radius:10px;padding:13px 16px;
+  font-size:.82rem;color:var(--cream);
+  margin-top:8px;
+  box-shadow:0 8px 32px rgba(0,0,0,.5);
+  animation:toastIn .3s ease,toastOut .3s ease 2.7s forwards;
+}
+.toast.err{border-color:var(--danger);color:#ffaaaa;}
+@keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-8px);}}
+
+.card:nth-child(1){animation-delay:.05s;}
+.card:nth-child(2){animation-delay:.1s;}
+.card:nth-child(3){animation-delay:.15s;}
+.card:nth-child(4){animation-delay:.2s;}
+.card:nth-child(5){animation-delay:.25s;}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="hero-top">
+    <div>
+      <span class="farm-id">🌿 Worker Log</span>
+      <h1>Good <em id="greeting">Morning</em>,<br>Farm Hand.</h1>
+    </div>
+    <div class="clock-pill">
+      <span id="clock">00:00</span>
+      <span id="date-line">Loading...</span>
+    </div>
+  </div>
+  <div class="fact-card" id="fact-card">
+    <div class="fact-icon" id="fact-icon">🐾</div>
+    <div class="fact-body">
+      <span class="fact-label">Did you know?</span>
+      <span class="fact-text" id="fact-text">Loading today's tip...</span>
+    </div>
+  </div>
+</div>
+
+<!-- STATUS STRIP -->
+<div class="status-strip">
+  <div class="s-pill" id="sp-normal"><div class="dot"></div>Normal Check-in</div>
+  <div class="s-pill" id="sp-special"><div class="dot"></div>Special Check-in</div>
+  <div class="s-pill" id="sp-report"><div class="dot"></div>Weekly Report</div>
+</div>
+
+<div class="wrap">
+
+<!-- ── CARD: DAILY TASKS ── -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">☑️</span> Daily Checklist</span>
+  </div>
+  <div class="card-body">
+    <div class="prog-row">
+      <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
+      <div class="prog-label" id="prog-label">0/9</div>
+    </div>
+
+    <div class="session-tag">🌅 Morning</div>
+    <div id="morning-tasks"></div>
+
+    <div class="session-tag">🌆 Evening</div>
+    <div id="evening-tasks"></div>
+
+    <div class="session-tag">📋 Anytime</div>
+    <div id="anytime-tasks"></div>
+
+    <button class="btn btn-green" id="btn-normal" disabled>Submit Normal Check-in</button>
+  </div>
+</div>
+
+<!-- ── CARD: SPECIAL TASKS ── -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">⭐</span> Special Tasks Today</span>
+  </div>
+  <div class="card-body">
+    <div id="season-chip"></div>
+    <div id="special-list"></div>
+    <button class="btn btn-amber" id="btn-special" disabled style="margin-top:14px;">Submit Special Check-in</button>
+  </div>
+</div>
+
+<!-- ── CARD: ALWAYS REMEMBER ── -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">📌</span> Always Remember</span>
+  </div>
+  <div class="card-body" style="padding-top:14px;">
+    <div class="reminder"><span class="ri">🤰</span><span>Watch for <strong>pregnancy signs</strong> — weight gain, swollen belly. Mark the female and date immediately.</span></div>
+    <div class="reminder"><span class="ri">🍼</span><span><strong>Birth occurred?</strong> Start the 72-hour no-disturb protocol. Double feed and water for the mother. Do not handle pups.</span></div>
+    <div class="reminder"><span class="ri">♂️</span><span><strong>Males over 6 months</strong> must be separated into individual compartments. They will fight to the death if left together.</span></div>
+  </div>
+</div>
+
+<!-- ── CARD: GRASSCUTTER INSIGHT ── -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">📖</span> Farmer's Corner</span>
+  </div>
+  <div class="card-body" style="padding-top:14px;">
+    <div style="font-family:var(--font-display);font-size:1.05rem;font-weight:600;color:var(--cream);line-height:1.4;margin-bottom:10px;" id="corner-title">Why Grasscutters Are Nigeria's Hidden Gold</div>
+    <p style="font-size:.83rem;color:var(--cream-dim);line-height:1.65;" id="corner-body">Loading...</p>
+    <div style="margin-top:14px;padding:12px;background:rgba(232,137,12,.07);border-radius:10px;border:1px solid rgba(232,137,12,.15);">
+      <div style="font-family:var(--font-mono);font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:6px;">Quick Fact</div>
+      <div style="font-size:.8rem;color:var(--cream-dim);" id="corner-stat">Loading...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CARD: WEEKLY REPORT ── -->
+<div class="card">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">📋</span> Weekly Report</span>
+  </div>
+  <div class="card-body" id="report-body">
+    <!-- filled by JS -->
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<div class="toast-wrap" id="toast-wrap"></div>
+
+<script>
+/* ══ CONFIG ══════════════════════════════════════════ */
+const CHECKIN_FORM = 'https://formspree.io/f/xnjrydve';
+const REPORT_FORM  = 'https://formspree.io/f/xnjryvqw';
+const FARM_START_DATE = null;
+
+/* ══ FACTS ═══════════════════════════════════════════ */
+const FACTS = [
+  {icon:'🦷', text:'Grasscutters\' teeth never stop growing. That\'s why they constantly gnaw — it\'s not mischief, it\'s biology. Always have hard food and wood available.'},
+  {icon:'🌡️', text:'Grasscutters are extremely sensitive to temperature. Above 32°C they experience heat stress and can die. Good ventilation is not optional — it\'s life or death.'},
+  {icon:'💧', text:'A grasscutter that runs out of water will refuse food. Water shortage is the fastest path to a sick herd. Morning and evening water checks are non-negotiable.'},
+  {icon:'👃', text:'Grasscutters communicate fear through scent. If one animal is stressed, the whole colony feels it. Keep the environment calm — no loud sounds, no sudden movements.'},
+  {icon:'🤝', text:'Females are peaceful and colony-friendly. They can live together without conflict. Males are the opposite — after 6 months, they will kill each other if not separated.'},
+  {icon:'🐣', text:'A healthy female produces 2 litters per year with 5 surviving pups each. That\'s 10 animals per female per year — compounding indefinitely if females are never sold.'},
+  {icon:'🌿', text:'Elephant grass is the ideal staple — free, fast-growing, and loved by grasscutters. Cassava peels, sugarcane, and sweet potato vines are excellent supplements.'},
+  {icon:'🧂', text:'Salt lick blocks are not a luxury — grasscutters need minerals. A missing salt lick is a silent health drain you won\'t notice until it\'s too late.'},
+];
+
+const CORNER_CONTENT = [
+  {
+    title:'Why Grasscutters Are Nigeria\'s Hidden Gold',
+    body:'Over 80% of Nigeria\'s grasscutter supply still comes from wild hunters — which means it\'s unsustainable, unreliable, and dangerous. Farmed grasscutter meat commands 8 to 12 times the price of beef per kilogramme. The demand exists. The supply gap is massive. You\'re on the right side of that equation.',
+    stat:'Farmed grasscutter sells at ₦40,000–₦50,000 per mature adult. One female produces 10 of those per year.'
+  },
+  {
+    title:'The Rule That Protects Everything',
+    body:'Never sell a female. Not out of desperation, not for quick cash, not for any reason. Every female you sell is a permanently destroyed future revenue stream. When cash is tight — sell more males, reduce supplement feed, or wait. The females stay.',
+    stat:'A single breeding female generates roughly ₦400,000–₦500,000 worth of offspring every year.'
+  },
+  {
+    title:'The Forage Farm Advantage',
+    body:'The single biggest cost-cutting move most new farmers miss is planting a dedicated forage farm before the animals arrive. Elephant grass on family land can cut your annual feeding cost from ₦380,000 down to ₦80,000 — saving nearly ₦1,000,000 over three years.',
+    stat:'Plant forage BEFORE the animals arrive. The grass must be mature and ready when the colony is hungry.'
+  },
+  {
+    title:'Disease: The Only Real Threat',
+    body:'Grasscutter farming is close to guaranteed — but disease is the one variable that can wipe everything out. The single most important rule: never mix wild-caught animals with your domesticated colony. Wild grasscutters carry diseases and parasites that kill domestic stock within weeks.',
+    stat:'One contaminated animal introduced to your colony can wipe the entire operation in under a month.'
+  },
+];
+
+/* ══ TASKS ════════════════════════════════════════════ */
+const MORNING_TASKS = [
+  {id:'mfeed',  text:'Morning feed — 40% forage (elephant grass, cassava peels)'},
+  {id:'mwater', text:'Refill clean water for all cages'},
+  {id:'mscan',  text:'Quick health scan — eyes, nose, droppings. Note anything unusual'},
+];
+const EVENING_TASKS = [
+  {id:'efeed',  text:'Evening feed — 60% forage + grain supplement'},
+  {id:'ewater', text:'Check and refill water (evening)'},
+  {id:'erats',  text:'Reset rat traps and glue boards'},
+];
+const ANYTIME_TASKS = [
+  {id:'manure', text:'Remove wet manure and spot clean affected cages'},
+  {id:'salt',   text:'Check salt lick block — always available in every cage'},
+  {id:'log',    text:'Update the farm record log with today\'s observations'},
+];
+
+const ALL_TASKS = [...MORNING_TASKS, ...EVENING_TASKS, ...ANYTIME_TASKS];
+
+/* ══ SPECIAL TASK LOGIC ══════════════════════════════ */
+function getSeason(m){return(m>=10||m<=2)?'harmattan':'rainy';}
+
+function getSpecialTasks(date){
+  const day=date.getDay(),m=date.getMonth(),dom=date.getDate();
+  const tasks=[];
+  const byDay={
+    0:['😴 Rest day — minimal disturbance. Keep it quiet. Basic checks only.'],
+    1:['🧹 Complete bedding change + deep clean of all cages'],
+    2:['💊 Vitamin C dose + probiotics (1st weekly dose)'],
+    3:['🌿 Salt lick inspection + forage inventory — how many days of grass remain?'],
+    4:['💊 Probiotics (2nd weekly dose)'],
+    5:['💊 Vitamin C + full health audit — weigh at least 10% of the herd'],
+    6:['🐀 Full facility check + rat control refresh — replace old traps and boards'],
+  };
+  tasks.push(...(byDay[day]||[]));
+  if(getSeason(m)==='harmattan'){
+    tasks.push('🌬️ Harmattan: Add windbreaks — tarpaulin or sacks over exposed sides');
+    tasks.push('💊 Harmattan: Increase Vitamin C to 3 times this week');
+  } else {
+    tasks.push('🌧️ Rainy season: Change bedding every 3–4 days — damp bedding breeds disease');
+    tasks.push('🚫 Rainy season: Never feed wet or rained-on forage');
+  }
+  if(dom<=7){
+    tasks.push('⚖️ First week: Monthly weight check — record all animals');
+    tasks.push('🐣 First week: Monthly breeding colony review');
+    tasks.push('🔩 First week: Cage and structural audit — check wire, joints, locks');
+  }
+  return tasks;
+}
+
+/* ══ DATE / CLOCK ════════════════════════════════════ */
+function todayKey(){
+  const d=new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+function lk(s){return`fw_${s}_${todayKey()}`;}
+
+function updateClock(){
+  const n=new Date();
+  const hh=String(n.getHours()).padStart(2,'0');
+  const mm=String(n.getMinutes()).padStart(2,'0');
+  document.getElementById('clock').textContent=`${hh}:${mm}`;
+  const days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  document.getElementById('date-line').textContent=`${days[n.getDay()]}, ${n.getDate()} ${months[n.getMonth()]}`;
+  const h=n.getHours();
+  document.getElementById('greeting').textContent=h<12?'Morning':h<17?'Afternoon':'Evening';
+}
+
+/* ══ TOAST ════════════════════════════════════════════ */
+function toast(msg,err=false){
+  const w=document.getElementById('toast-wrap');
+  const t=document.createElement('div');
+  t.className='toast'+(err?' err':'');
+  t.textContent=msg;
+  w.appendChild(t);
+  setTimeout(()=>t.remove(),3200);
+}
+
+/* ══ CHECKED STATE ═══════════════════════════════════ */
+let checked=new Set();
+
+function renderTasks(listId, tasks){
+  const c=document.getElementById(listId);
+  c.innerHTML='';
+  tasks.forEach(t=>{
+    const el=document.createElement('div');
+    el.className='task'+(checked.has(t.id)?' done':'');
+    el.dataset.id=t.id;
+    el.innerHTML=`<div class="task-check"></div><div class="task-text">${t.text}</div>`;
+    el.addEventListener('click',()=>{
+      if(checked.has(t.id))checked.delete(t.id); else checked.add(t.id);
+      el.classList.toggle('done');
+      updateProgress();
+    });
+    c.appendChild(el);
+  });
+}
+
+function updateProgress(){
+  const total=ALL_TASKS.length, done=checked.size;
+  document.getElementById('prog-fill').style.width=`${(done/total)*100}%`;
+  document.getElementById('prog-label').textContent=`${done}/${total}`;
+  const allDone=done===total;
+  const normalDone=!!localStorage.getItem(lk('normal'));
+  document.getElementById('btn-normal').disabled=!allDone||normalDone;
+  const sp=getSpecialTasks(new Date());
+  const specDone=!!localStorage.getItem(lk('special'));
+  document.getElementById('btn-special').disabled=!allDone||sp.length===0||specDone;
+}
+
+/* ══ SPECIAL TASKS RENDER ════════════════════════════ */
+function renderSpecial(){
+  const now=new Date();
+  const tasks=getSpecialTasks(now);
+  const season=getSeason(now.getMonth());
+  document.getElementById('season-chip').innerHTML=
+    `<div class="season-chip">${season==='harmattan'?'🌬️ Harmattan Season':'🌧️ Rainy Season'}</div>`;
+  const list=document.getElementById('special-list');
+  if(!tasks.length){list.innerHTML='<div class="no-special">— No special tasks today —</div>';return;}
+  list.innerHTML=tasks.map(t=>`<div class="special-item"><span class="special-bullet">›</span><span>${t}</span></div>`).join('');
+}
+
+/* ══ STATUS PILLS ════════════════════════════════════ */
+function refreshPills(){
+  ['normal','special','report'].forEach(k=>{
+    const pill=document.getElementById(`sp-${k}`);
+    if(localStorage.getItem(lk(k)))pill.classList.add('done');
+    else pill.classList.remove('done');
+  });
+  if(localStorage.getItem(lk('normal'))){
+    const b=document.getElementById('btn-normal');
+    b.textContent='✅ Normal Check-in Done';b.classList.add('btn-done-state');b.disabled=true;
+  }
+  if(localStorage.getItem(lk('special'))){
+    const b=document.getElementById('btn-special');
+    b.textContent='✅ Special Check-in Done';b.classList.add('btn-done-state');b.disabled=true;
+  }
+  if(localStorage.getItem(lk('report'))){
+    const b=document.getElementById('btn-report-submit');
+    if(b){b.textContent='✅ Report Submitted';b.classList.add('btn-done-state');b.disabled=true;}
+  }
+}
+
+/* ══ WEEKLY REPORT RENDER ════════════════════════════ */
+function renderReportSection(){
+  const isToday=new Date().getDay()===0; // Sunday
+  const body=document.getElementById('report-body');
+  if(!isToday){
+    const daysUntil=7-new Date().getDay();
+    body.innerHTML=`
+      <div class="sunday-gate">
+        <span class="sg-emoji">📅</span>
+        <div class="sg-title">Weekly Report — Sundays Only</div>
+        <div class="sg-sub">The weekly report is submitted once a week, every Sunday.<br>This keeps the owner's data clean and consistent.</div>
+        <div class="sg-countdown">Opens in ${daysUntil} day${daysUntil===1?'':'s'}</div>
+      </div>`;
+    return;
+  }
+  if(localStorage.getItem(lk('report'))){
+    body.innerHTML=`<div class="sunday-gate"><span class="sg-emoji">✅</span><div class="sg-title">Report Submitted</div><div class="sg-sub">Weekly report sent successfully. See you next Sunday.</div></div>`;
+    return;
+  }
+  body.innerHTML=`
+    <div style="padding-top:4px;">
+    <div class="form-row">
+      <div class="fg"><label class="fl">Total Grasscutters *</label><input class="fi" type="number" id="r-total" min="0" placeholder="e.g. 20"/></div>
+      <div class="fg"><label class="fl">Pregnant Females</label><input class="fi" type="number" id="r-pregnant" min="0" placeholder="0"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label class="fl">Sick Animals</label><input class="fi" type="number" id="r-sick" min="0" placeholder="0"/></div>
+      <div class="fg"><label class="fl">Dead This Week</label><input class="fi" type="number" id="r-dead" min="0" placeholder="0"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label class="fl">New Pups Born</label><input class="fi" type="number" id="r-pups" min="0" placeholder="0"/></div>
+      <div class="fg"><label class="fl">Males Sold</label><input class="fi" type="number" id="r-sold" min="0" placeholder="0"/></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label class="fl">Food Supply</label>
+        <select class="fs" id="r-food"><option value="">Select...</option><option>Low</option><option>Sufficient</option><option>High</option></select>
+      </div>
+      <div class="fg"><label class="fl">Grain Left (days)</label><input class="fi" type="number" id="r-grain" min="0" placeholder="0"/></div>
+    </div>
+    <div class="fg"><label class="fl">Manager Notes</label><textarea class="ft" id="r-notes" placeholder="Any observations, births, concerns..."></textarea></div>
+    <button class="btn btn-amber" id="btn-report-submit">📤 Submit Weekly Report</button>
+    </div>`;
+
+  document.getElementById('btn-report-submit').addEventListener('click',submitReport);
+}
+
+/* ══ FORMSPREE ═══════════════════════════════════════ */
+async function post(url,data){
+  const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(data)});
+  if(!r.ok)throw new Error('failed');
+}
+
+document.getElementById('btn-normal').addEventListener('click',async()=>{
+  const b=document.getElementById('btn-normal');
+  b.disabled=true;b.textContent='Sending...';
+  try{
+    await post(CHECKIN_FORM,{type:'normal_checkin',date:todayKey(),timestamp:new Date().toISOString(),tasks:ALL_TASKS.map(t=>t.id).join(',')});
+    localStorage.setItem(lk('normal'),'1');
+    toast('✅ Normal check-in submitted. Good work today.');
+    b.textContent='✅ Normal Check-in Done';b.classList.add('btn-done-state');
+    refreshPills();updateProgress();
+  }catch{toast('❌ Failed. Check your connection.',true);b.disabled=false;b.textContent='Submit Normal Check-in';}
+});
+
+document.getElementById('btn-special').addEventListener('click',async()=>{
+  const b=document.getElementById('btn-special');
+  b.disabled=true;b.textContent='Sending...';
+  try{
+    await post(CHECKIN_FORM,{type:'special_checkin',date:todayKey(),timestamp:new Date().toISOString(),tasks:getSpecialTasks(new Date()).join(' | ')});
+    localStorage.setItem(lk('special'),'1');
+    toast('⭐ Special check-in submitted!');
+    b.textContent='✅ Special Check-in Done';b.classList.add('btn-done-state');
+    refreshPills();
+  }catch{toast('❌ Failed. Check your connection.',true);b.disabled=false;b.textContent='Submit Special Check-in';}
+});
+
+async function submitReport(){
+  const total=document.getElementById('r-total').value.trim();
+  if(!total){toast('⚠️ Total grasscutters is required.',true);return;}
+  const b=document.getElementById('btn-report-submit');
+  b.disabled=true;b.textContent='Sending...';
+  try{
+    await post(REPORT_FORM,{
+      type:'weekly_report',date:todayKey(),timestamp:new Date().toISOString(),
+      total,pregnant:document.getElementById('r-pregnant').value||'0',
+      sick:document.getElementById('r-sick').value||'0',
+      dead:document.getElementById('r-dead').value||'0',
+      pups:document.getElementById('r-pups').value||'0',
+      sold:document.getElementById('r-sold').value||'0',
+      food_status:document.getElementById('r-food').value||'—',
+      grain_days:document.getElementById('r-grain').value||'0',
+      notes:document.getElementById('r-notes').value||'—',
+    });
+    localStorage.setItem(lk('report'),'1');
+    toast('📤 Weekly report sent to owner!');
+    renderReportSection();refreshPills();
+  }catch{toast('❌ Failed. Try again.',true);b.disabled=false;b.textContent='📤 Submit Weekly Report';}
+}
+
+/* ══ DYNAMIC CONTENT ═════════════════════════════════ */
+function loadFact(){
+  const f=FACTS[new Date().getDate()%FACTS.length];
+  document.getElementById('fact-icon').textContent=f.icon;
+  document.getElementById('fact-text').textContent=f.text;
+}
+function loadCorner(){
+  const c=CORNER_CONTENT[new Date().getDate()%CORNER_CONTENT.length];
+  document.getElementById('corner-title').textContent=c.title;
+  document.getElementById('corner-body').textContent=c.body;
+  document.getElementById('corner-stat').textContent=c.stat;
+}
+
+/* ══ INIT ════════════════════════════════════════════ */
+updateClock();setInterval(updateClock,1000);
+renderTasks('morning-tasks',MORNING_TASKS);
+renderTasks('evening-tasks',EVENING_TASKS);
+renderTasks('anytime-tasks',ANYTIME_TASKS);
+renderSpecial();
+renderReportSection();
+refreshPills();
+updateProgress();
+loadFact();
+loadCorner();
+</script>
+</body>
+</html>
