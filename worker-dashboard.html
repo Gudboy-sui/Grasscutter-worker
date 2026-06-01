@@ -1287,6 +1287,13 @@ async function submitEvent(type) {
   if (type === 'birth') {
     const slot = document.getElementById('ev-birth-slot').value.trim().toUpperCase();
     if (!slot) { toast('⚠️ Female slot ID is required.', true); return; }
+    // Check if this female is elite and show priority notice
+    try {
+      const { data: animalData } = await sb.from('colony_animals').select('is_elite').eq('slot_id', slot).eq('is_current', true).single();
+      if (animalData && animalData.is_elite) {
+        toast('⭐ ELITE BREEDER — Log this litter carefully. Every pup counts.', false);
+      }
+    } catch(e) {}
     payload.animal_id     = slot;
     payload.pups_born     = parseInt(document.getElementById('ev-birth-born').value) || 0;
     payload.pups_survived = parseInt(document.getElementById('ev-birth-survived').value) || 0;
