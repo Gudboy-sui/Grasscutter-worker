@@ -279,6 +279,23 @@ body::after{
 .fs option{background:var(--bark);}
 .ft{resize:vertical;min-height:80px;}
 
+/* ── COLONY EVENT FORMS ── */
+.event-tab-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;}
+.event-tab{
+  font-family:var(--font-mono);font-size:.58rem;text-transform:uppercase;
+  letter-spacing:1px;padding:6px 12px;border-radius:20px;
+  border:1px solid var(--bark);color:var(--cream-dim);
+  cursor:pointer;background:transparent;transition:all .2s;
+}
+.event-tab.active{background:rgba(232,137,12,.1);color:var(--amber-soft);border-color:rgba(232,137,12,.3);}
+.event-panel{display:none;}
+.event-panel.active{display:block;}
+.event-note{
+  font-family:var(--font-mono);font-size:.62rem;color:var(--amber-soft);
+  background:rgba(232,137,12,.07);border:1px solid rgba(232,137,12,.2);
+  border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.6;
+}
+
 /* ── SUNDAY GATE ── */
 .sunday-gate{
   text-align:center;padding:24px 16px;
@@ -638,6 +655,80 @@ body::after{
   </div>
 </div>
 
+<!-- ── CARD: COLONY EVENTS ── -->
+<div class="card" id="colony-events-card" style="display:none;">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">🐾</span> Log a Colony Event</span>
+  </div>
+  <div class="card-body" id="colony-events-body">
+
+    <div class="event-note">Only log when something actually happens — a birth, death, replacement, isolation, or male rotation. You don't need to log every day.</div>
+
+    <div class="event-tab-row">
+      <button class="event-tab active" onclick="switchEventTab('birth')">🐣 Birth</button>
+      <button class="event-tab" onclick="switchEventTab('death')">💀 Death</button>
+      <button class="event-tab" onclick="switchEventTab('replace')">🔄 Replace</button>
+      <button class="event-tab" onclick="switchEventTab('isolate')">🔒 Isolate</button>
+      <button class="event-tab" onclick="switchEventTab('rotate')">♻️ Male Swap</button>
+    </div>
+
+    <!-- BIRTH -->
+    <div class="event-panel active" id="ep-birth">
+      <div class="fg"><label class="fl">Female Slot ID (e.g. C1F2) *</label><input class="fi" type="text" id="ev-birth-slot" placeholder="C1F2" style="text-transform:uppercase"/></div>
+      <div class="form-row">
+        <div class="fg"><label class="fl">Pups Born</label><input class="fi" type="number" id="ev-birth-born" min="0" placeholder="0"/></div>
+        <div class="fg"><label class="fl">Pups Alive at 6 Weeks</label><input class="fi" type="number" id="ev-birth-survived" min="0" placeholder="0"/></div>
+      </div>
+      <div class="fg"><label class="fl">Notes (optional)</label><textarea class="ft" id="ev-birth-notes" placeholder="Any observations about this litter..."></textarea></div>
+      <button class="btn btn-amber" onclick="submitEvent('birth')">🐣 Log Birth</button>
+    </div>
+
+    <!-- DEATH -->
+    <div class="event-panel" id="ep-death">
+      <div class="event-note" style="color:#ff9494;border-color:rgba(224,82,82,.3);background:rgba(224,82,82,.07);">If multiple animals died, submit one entry per animal.</div>
+      <div class="fg"><label class="fl">Animal Slot ID (e.g. C1F3) *</label><input class="fi" type="text" id="ev-death-slot" placeholder="C1F3" style="text-transform:uppercase"/></div>
+      <div class="fg"><label class="fl">Cause (if known)</label><input class="fi" type="text" id="ev-death-cause" placeholder="e.g. respiratory, unknown"/></div>
+      <div class="fg"><label class="fl">Notes (optional)</label><textarea class="ft" id="ev-death-notes" placeholder="Any relevant observations..."></textarea></div>
+      <button class="btn btn-amber" onclick="submitEvent('death')">💀 Log Death</button>
+    </div>
+
+    <!-- REPLACE -->
+    <div class="event-panel" id="ep-replace">
+      <div class="event-note">Use this after a death when a new animal is placed into the vacant slot. The old ID is retired; the new animal gets the next available ID.</div>
+      <div class="fg"><label class="fl">Slot Being Filled (e.g. C1F3) *</label><input class="fi" type="text" id="ev-rep-slot" placeholder="C1F3" style="text-transform:uppercase"/></div>
+      <div class="fg"><label class="fl">Source of Replacement</label><input class="fi" type="text" id="ev-rep-source" placeholder="e.g. own farm born, purchased"/></div>
+      <div class="fg"><label class="fl">Notes (optional)</label><textarea class="ft" id="ev-rep-notes" placeholder="Any notes about the new animal..."></textarea></div>
+      <button class="btn btn-amber" onclick="submitEvent('replace')">🔄 Log Replacement</button>
+    </div>
+
+    <!-- ISOLATE -->
+    <div class="event-panel" id="ep-isolate">
+      <div class="event-note">Mark an animal as isolated (sick, aggressive, post-birth recovery). Owner sees this flagged immediately.</div>
+      <div class="fg"><label class="fl">Animal Slot ID *</label><input class="fi" type="text" id="ev-iso-slot" placeholder="C1F1" style="text-transform:uppercase"/></div>
+      <div class="fg">
+        <label class="fl">Action</label>
+        <select class="fs" id="ev-iso-action">
+          <option value="isolate">Isolate animal</option>
+          <option value="return">Return animal to cage</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Reason</label><input class="fi" type="text" id="ev-iso-reason" placeholder="e.g. sick, post-birth, aggressive"/></div>
+      <button class="btn btn-amber" onclick="submitEvent('isolate')">🔒 Log Isolation Update</button>
+    </div>
+
+    <!-- MALE ROTATION -->
+    <div class="event-panel" id="ep-rotate">
+      <div class="event-note">Use when swapping the breeding male in a colony. This is important for tracking which male sired which litters.</div>
+      <div class="fg"><label class="fl">Colony Number *</label><input class="fi" type="number" id="ev-rot-colony" placeholder="e.g. 1" min="1"/></div>
+      <div class="fg"><label class="fl">Outgoing Male ID</label><input class="fi" type="text" id="ev-rot-out" placeholder="e.g. C1M" style="text-transform:uppercase"/></div>
+      <div class="fg"><label class="fl">Incoming Male ID</label><input class="fi" type="text" id="ev-rot-in" placeholder="e.g. C3M or new tag" style="text-transform:uppercase"/></div>
+      <div class="fg"><label class="fl">Reason</label><input class="fi" type="text" id="ev-rot-reason" placeholder="e.g. age, inbreeding prevention"/></div>
+      <button class="btn btn-amber" onclick="submitEvent('rotate')">♻️ Log Male Rotation</button>
+    </div>
+
+  </div>
+</div>
+
 </div><!-- /wrap -->
 
 <div class="toast-wrap" id="toast-wrap"></div>
@@ -708,6 +799,7 @@ async function onLoggedIn() {
   updateProgress();
   loadFact();
   loadCorner();
+  loadColonyConfig();
 }
 
 /* ══ SETUP LOGIC ═════════════════════════════════════ */
@@ -1163,6 +1255,99 @@ async function submitReport(){
     toast('📤 Weekly report sent to owner!');
     renderReportSection();refreshPills();
   }catch{toast('❌ Failed. Try again.',true);b.disabled=false;b.textContent='📤 Submit Weekly Report';}
+}
+
+/* ══ COLONY EVENTS ═══════════════════════════════════ */
+function switchEventTab(tab) {
+  document.querySelectorAll('.event-tab').forEach((t,i) => {
+    const tabs = ['birth','death','replace','isolate','rotate'];
+    t.classList.toggle('active', tabs[i] === tab);
+  });
+  document.querySelectorAll('.event-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`ep-${tab}`).classList.add('active');
+}
+
+async function loadColonyConfig() {
+  // Check if farm is started and has colonies configured
+  const { data } = await sb.from('farm_config').select('farm_started, colony_count').limit(1).single();
+  if (data && data.farm_started && data.colony_count) {
+    document.getElementById('colony-events-card').style.display = 'block';
+  }
+}
+
+async function submitEvent(type) {
+  if (!currentUser) return;
+  let payload = {
+    event_type:  type,
+    logged_by:   currentUser.id,
+    event_date:  todayKey(),
+    created_at:  new Date().toISOString(),
+  };
+
+  if (type === 'birth') {
+    const slot = document.getElementById('ev-birth-slot').value.trim().toUpperCase();
+    if (!slot) { toast('⚠️ Female slot ID is required.', true); return; }
+    payload.animal_id     = slot;
+    payload.pups_born     = parseInt(document.getElementById('ev-birth-born').value) || 0;
+    payload.pups_survived = parseInt(document.getElementById('ev-birth-survived').value) || 0;
+    payload.notes         = document.getElementById('ev-birth-notes').value || '';
+  } else if (type === 'death') {
+    const slot = document.getElementById('ev-death-slot').value.trim().toUpperCase();
+    if (!slot) { toast('⚠️ Animal slot ID is required.', true); return; }
+    payload.animal_id = slot;
+    payload.cause     = document.getElementById('ev-death-cause').value || '';
+    payload.notes     = document.getElementById('ev-death-notes').value || '';
+  } else if (type === 'replace') {
+    const slot = document.getElementById('ev-rep-slot').value.trim().toUpperCase();
+    if (!slot) { toast('⚠️ Slot ID is required.', true); return; }
+    payload.animal_id = slot;
+    payload.source    = document.getElementById('ev-rep-source').value || '';
+    payload.notes     = document.getElementById('ev-rep-notes').value || '';
+  } else if (type === 'isolate') {
+    const slot = document.getElementById('ev-iso-slot').value.trim().toUpperCase();
+    if (!slot) { toast('⚠️ Animal slot ID is required.', true); return; }
+    payload.animal_id    = slot;
+    payload.iso_action   = document.getElementById('ev-iso-action').value;
+    payload.reason       = document.getElementById('ev-iso-reason').value || '';
+  } else if (type === 'rotate') {
+    const colony = document.getElementById('ev-rot-colony').value;
+    if (!colony) { toast('⚠️ Colony number is required.', true); return; }
+    payload.colony_num  = parseInt(colony);
+    payload.male_out    = document.getElementById('ev-rot-out').value.toUpperCase();
+    payload.male_in     = document.getElementById('ev-rot-in').value.toUpperCase();
+    payload.reason      = document.getElementById('ev-rot-reason').value || '';
+  }
+
+  const { error } = await sb.from('colony_events').insert(payload);
+
+  if (error) {
+    toast('❌ Failed to save. Check connection.', true);
+    console.error(error);
+    return;
+  }
+
+  // Handle isolation flag on animal record
+  if (type === 'isolate') {
+    const isIsolating = payload.iso_action === 'isolate';
+    await sb.from('colony_animals')
+      .update({ isolated: isIsolating, isolated_since: isIsolating ? new Date().toISOString() : null })
+      .eq('slot_id', payload.animal_id)
+      .eq('is_current', true);
+  }
+
+  // On death, mark animal as not current
+  if (type === 'death') {
+    await sb.from('colony_animals')
+      .update({ is_current: false, died_on: todayKey() })
+      .eq('slot_id', payload.animal_id)
+      .eq('is_current', true);
+  }
+
+  const labels = { birth:'🐣 Birth logged!', death:'💀 Death recorded.', replace:'🔄 Replacement logged.', isolate:'🔒 Isolation updated.', rotate:'♻️ Male rotation logged.' };
+  toast(labels[type] || '✅ Event saved.');
+
+  // Clear form
+  document.querySelectorAll(`#ep-${type} input, #ep-${type} textarea`).forEach(el => el.value = '');
 }
 
 /* ══ DYNAMIC CONTENT ═════════════════════════════════ */
