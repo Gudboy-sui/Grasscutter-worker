@@ -1018,17 +1018,17 @@ const CORNER_CONTENT = [
 
 /* ══ TASKS ════════════════════════════════════════════ */
 const MORNING_TASKS = [
-  {id:'mfeed',  text:'Morning feed — 40% forage (elephant grass, cassava peels)'},
-  {id:'mwater', text:'Refill clean water for all cages'},
-  {id:'mscan',  text:'Quick health scan — eyes, nose, droppings. Note anything unusual'},
+  {id:'mfeed',  text:'Morning feed — cut from the correct zone, mix at least 3 plant types, feed by life stage'},
+  {id:'mwater', text:'Refill clean water for all cages — stale water causes infections'},
+  {id:'mscan',  text:'Quick health scan — eyes, coat, posture, breathing. Note anything unusual'},
 ];
 const EVENING_TASKS = [
-  {id:'efeed',  text:'Evening feed — 60% forage + grain supplement'},
+  {id:'efeed',  text:'Evening feed — smaller portion (half of morning), mix of forage + grain supplement'},
   {id:'ewater', text:'Check and refill water (evening)'},
-  {id:'erats',  text:'Reset rat traps and glue boards'},
+  {id:'elatch', text:'Secure all cage latches and doors — check every one'},
 ];
 const ANYTIME_TASKS = [
-  {id:'manure', text:'Remove wet manure and spot clean affected cages'},
+  {id:'manure', text:'Clear manure tray if 2 days have passed — slide out, dump, rinse, slide back'},
   {id:'salt',   text:'Check salt lick block — always available in every cage'},
   {id:'log',    text:'Update the farm record log with today\'s observations'},
 ];
@@ -1198,6 +1198,12 @@ function renderReportSection(){
       </div>
       <div class="fg"><label class="fl">Grain Left (days)</label><input class="fi" type="number" id="r-grain" min="0" placeholder="0"/></div>
     </div>
+    <div class="form-row">
+      <div class="fg"><label class="fl">Forage Zone Cut Today</label>
+        <select class="fs" id="r-zone"><option value="">Select...</option><option>Zone 1</option><option>Zone 2</option><option>Both Zone 1 &amp; 2</option><option>Farmland Trip</option><option>Zone 1 + Farmland</option></select>
+      </div>
+      <div class="fg"><label class="fl">Feed Mix Used</label><input class="fi" type="text" id="r-feedmix" placeholder="e.g. SC + SPV + EG"/></div>
+    </div>
     <div class="fg"><label class="fl">Manager Notes</label><textarea class="ft" id="r-notes" placeholder="Any observations, births, concerns..."></textarea></div>
     <button class="btn btn-amber" id="btn-report-submit">📤 Submit Weekly Report</button>
     </div>`;
@@ -1249,6 +1255,8 @@ async function submitReport(){
       sold:document.getElementById('r-sold').value||'0',
       food_status:document.getElementById('r-food').value||'—',
       grain_days:document.getElementById('r-grain').value||'0',
+      zone_cut:document.getElementById('r-zone').value||'—',
+      feed_mix:document.getElementById('r-feedmix').value||'—',
       notes:document.getElementById('r-notes').value||'—',
     });
     await setFlag('report');
