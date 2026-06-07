@@ -325,7 +325,83 @@ body::after{
 @keyframes toastIn{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
 @keyframes toastOut{to{opacity:0;transform:translateY(-8px);}}
 
-/* ── HEALTH STATUS ROWS ── */
+/* ── GC ID LEGEND ── */
+.gc-format-block{background:rgba(255,255,255,.02);border:1px solid var(--bark);border-radius:10px;padding:14px;}
+.gc-format-row{display:flex;gap:12px;align-items:flex-start;}
+.gc-code{
+  font-family:var(--font-mono);font-size:.75rem;font-weight:500;
+  color:var(--amber);background:rgba(232,137,12,.12);
+  border:1px solid rgba(232,137,12,.25);border-radius:6px;
+  padding:5px 10px;white-space:nowrap;flex-shrink:0;margin-top:2px;
+}
+.gc-explain{display:flex;flex-direction:column;gap:4px;}
+.gc-part{font-size:.78rem;color:var(--cream-dim);line-height:1.5;}
+.gc-part b{color:var(--cream);}
+
+/* ── INFO BUTTON ── */
+.info-btn{
+  background:rgba(232,137,12,.1);border:1px solid rgba(232,137,12,.25);
+  color:var(--amber);font-family:var(--font-mono);font-size:.65rem;
+  padding:4px 9px;border-radius:6px;cursor:pointer;
+  flex-shrink:0;transition:all .2s;
+}
+.info-btn:hover{background:rgba(232,137,12,.2);}
+.info-tooltip{
+  background:rgba(255,248,220,.06);border:1px solid rgba(232,137,12,.2);
+  border-radius:8px;padding:12px 14px;margin:0 16px 12px;
+  font-size:.8rem;color:var(--cream-dim);line-height:1.6;
+  animation:fadeSlide .2s ease;
+}
+.info-tooltip.hidden{display:none;}
+
+/* ── ANIMAL REGISTRY TABLE ── */
+.registry-table{width:100%;border-collapse:collapse;font-size:.74rem;}
+.registry-table th{
+  background:rgba(232,137,12,.12);color:var(--amber);
+  font-family:var(--font-mono);font-size:.55rem;
+  letter-spacing:1.5px;text-transform:uppercase;
+  padding:9px 8px;text-align:left;border-bottom:1px solid var(--clay);
+}
+.registry-table td{
+  padding:9px 8px;border-bottom:1px solid rgba(255,255,255,.04);
+  vertical-align:top;
+}
+.registry-table tr:last-child td{border-bottom:none;}
+.reg-gc-id{font-family:var(--font-mono);color:var(--amber);font-size:.72rem;font-weight:500;}
+.reg-slot{font-family:var(--font-mono);color:var(--cream-dim);font-size:.65rem;}
+.reg-role{color:var(--cream);font-size:.78rem;}
+.reg-tag{display:inline-block;font-family:var(--font-mono);font-size:.55rem;padding:2px 7px;border-radius:10px;font-weight:600;letter-spacing:.5px;}
+.reg-tag.tagged{background:rgba(125,184,122,.15);color:var(--sage);border:1px solid rgba(125,184,122,.3);}
+.reg-tag.untagged{background:rgba(232,137,12,.1);color:var(--amber-soft);border:1px solid rgba(232,137,12,.2);}
+.reg-tag.litter{background:rgba(92,61,26,.6);color:var(--cream-dim);border:1px solid var(--clay);}
+
+/* ── PENDING TAGS ── */
+.pending-tag-row{
+  background:rgba(232,137,12,.06);border:1px solid rgba(232,137,12,.2);
+  border-radius:10px;padding:12px 14px;margin-bottom:8px;
+}
+.pending-tag-row:last-child{margin-bottom:0;}
+.ptag-litter{font-family:var(--font-mono);font-size:.62rem;color:var(--amber-soft);margin-bottom:4px;}
+.ptag-info{font-size:.8rem;color:var(--cream-dim);line-height:1.6;}
+.ptag-age{font-family:var(--font-mono);font-size:.6rem;color:var(--cream-dim);margin-top:4px;}
+.ptag-urgent{color:var(--danger);font-weight:600;}
+
+/* ── GC ID SELECTOR IN FORMS ── */
+.gc-select-wrap{position:relative;}
+.gc-id-selector{
+  width:100%;background:var(--bark);border:1px solid var(--clay);
+  color:var(--cream);font-family:var(--font-mono);font-size:.82rem;
+  padding:11px 14px;border-radius:10px;outline:none;
+  transition:border-color .2s;-webkit-appearance:none;
+}
+.gc-id-selector:focus{border-color:var(--amber);}
+.gc-selected-info{
+  margin-top:6px;padding:8px 12px;background:rgba(255,255,255,.03);
+  border:1px solid var(--bark);border-radius:8px;
+  font-family:var(--font-mono);font-size:.62rem;color:var(--cream-dim);
+  line-height:1.6;display:none;
+}
+.gc-selected-info.show{display:block;}
 .health-row{
   display:flex;align-items:center;justify-content:space-between;
   padding:10px 12px;border-radius:8px;margin-bottom:6px;
@@ -714,18 +790,21 @@ body::after{
     <!-- BIRTH -->
     <div class="event-panel active" id="ep-birth">
       <div class="event-note">All animals on this farm are hybrid. No breed field needed.</div>
-      <div class="form-row">
-        <div class="fg"><label class="fl">Female ID (e.g. BA-F1) *</label><input class="fi" type="text" id="ev-birth-slot" placeholder="BA-F1" style="text-transform:uppercase"/></div>
-        <div class="fg"><label class="fl">Batch (A or B)</label>
-          <select class="fs" id="ev-birth-batch">
-            <option value="">Select...</option>
-            <option value="A">Batch A</option>
-            <option value="B">Batch B</option>
-          </select>
-        </div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Mother's GC ID * <button class="info-btn" onclick="showInfo('info-birth-mother')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-birth-mother">Select the founding female who just gave birth. Her GC ID starts with GC-F (founder). Example: GC-F-002 = Batch A Female 1. The system will auto-generate the Litter ID from her ID and litter count.</div>
+        <select class="gc-id-selector" id="ev-birth-mother-gc" onchange="onMotherSelect()">
+          <option value="">Select mother's GC ID...</option>
+        </select>
+        <div class="gc-selected-info" id="birth-mother-info"></div>
+      </div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Litter ID (auto-generated) <button class="info-btn" onclick="showInfo('info-litter-id')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-litter-id">The Litter ID is created automatically from the mother's GC ID and her litter count. Format: LIT-[mother GC ID]-[litter number]. Example: LIT-GC-F-002-01 means "first litter from GC-F-002". All pups from this birth share this ID until individually tagged at 10–12 weeks.</div>
+        <input class="fi" type="text" id="ev-birth-litter-id" placeholder="Will fill automatically when you select a mother" readonly style="opacity:.7;"/>
       </div>
       <div class="form-row">
-        <div class="fg"><label class="fl">Pups Born</label><input class="fi" type="number" id="ev-birth-born" min="0" placeholder="0"/></div>
+        <div class="fg"><label class="fl">Pups Born *</label><input class="fi" type="number" id="ev-birth-born" min="0" placeholder="0"/></div>
         <div class="fg"><label class="fl">Pups Alive at 24 hrs</label><input class="fi" type="number" id="ev-birth-24hr" min="0" placeholder="0"/></div>
       </div>
       <div class="fg"><label class="fl">Pups Alive at 6 Weeks</label><input class="fi" type="number" id="ev-birth-survived" min="0" placeholder="0 — fill at weaning time"/></div>
@@ -736,7 +815,14 @@ body::after{
     <!-- DEATH -->
     <div class="event-panel" id="ep-death">
       <div class="event-note" style="color:#ff9494;border-color:rgba(224,82,82,.3);background:rgba(224,82,82,.07);">Take a photo of the animal immediately. If disease is suspected, notify the owner TODAY — do not wait for the weekly report. Submit one entry per animal.</div>
-      <div class="fg"><label class="fl">Animal ID (e.g. BA-F2, BM-01) *</label><input class="fi" type="text" id="ev-death-slot" placeholder="BA-F2" style="text-transform:uppercase"/></div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Animal GC ID * <button class="info-btn" onclick="showInfo('info-death-gc')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-death-gc">Select the GC ID of the animal that died. GC-F = founding animal. GC-25/GC-26 = born on this farm. If the animal was a pup not yet individually tagged, select its Litter ID group instead and describe which pup in the notes.</div>
+        <select class="gc-id-selector" id="ev-death-gc-id" onchange="showAnimalInfo('ev-death-gc-id','death-animal-info')">
+          <option value="">Select GC ID...</option>
+        </select>
+        <div class="gc-selected-info" id="death-animal-info"></div>
+      </div>
       <div class="fg">
         <label class="fl">Cause of Death *</label>
         <select class="fs" id="ev-death-cause">
@@ -753,25 +839,48 @@ body::after{
 
     <!-- REPLACE -->
     <div class="event-panel" id="ep-replace">
-      <div class="event-note">Use this after a death when a new animal is placed into the vacant slot. The old ID is retired; the new animal gets the next available ID.</div>
-      <div class="fg"><label class="fl">Slot Being Filled (e.g. C1F3) *</label><input class="fi" type="text" id="ev-rep-slot" placeholder="C1F3" style="text-transform:uppercase"/></div>
-      <div class="fg"><label class="fl">Source of Replacement</label><input class="fi" type="text" id="ev-rep-source" placeholder="e.g. own farm born, purchased"/></div>
-      <div class="fg"><label class="fl">Notes (optional)</label><textarea class="ft" id="ev-rep-notes" placeholder="Any notes about the new animal..."></textarea></div>
+      <div class="event-note">Use this after a founding female dies and a replacement is purchased. The replacement gets the next available GC ID. Full 2-week quarantine applies before she joins the colony.</div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Slot Being Filled * <button class="info-btn" onclick="showInfo('info-rep-slot')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-rep-slot">Which role is being filled? Example: BA-F1 slot is empty after a founding female died. The new animal gets a new GC ID and takes over the BA-F1 slot position.</div>
+        <select class="fs" id="ev-rep-slot">
+          <option value="">Select slot...</option>
+          <option value="BA-F1">BA-F1 — Batch A Female 1</option>
+          <option value="BA-F2">BA-F2 — Batch A Female 2</option>
+          <option value="BB-F1">BB-F1 — Batch B Female 1</option>
+          <option value="BB-F2">BB-F2 — Batch B Female 2</option>
+          <option value="BM-01">BM-01 — Breeding Male (bloodline refresh)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Source of Replacement</label>
+        <select class="fs" id="ev-rep-source">
+          <option value="purchased_certified">Purchased — certified hybrid farm</option>
+          <option value="own_farm_born">Own farm born (replacement breeder)</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Notes (optional)</label><textarea class="ft" id="ev-rep-notes" placeholder="Any notes about the new animal — source farm, weight, condition on arrival..."></textarea></div>
       <button class="btn btn-amber" onclick="submitEvent('replace')">🔄 Log Replacement</button>
     </div>
 
     <!-- ISOLATE -->
     <div class="event-panel" id="ep-isolate">
       <div class="event-note">Mark an animal as isolated (sick, aggressive, post-birth recovery). Owner sees this flagged immediately.</div>
-      <div class="fg"><label class="fl">Animal Slot ID *</label><input class="fi" type="text" id="ev-iso-slot" placeholder="C1F1" style="text-transform:uppercase"/></div>
       <div class="fg">
-        <label class="fl">Action</label>
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Animal GC ID * <button class="info-btn" onclick="showInfo('info-iso-gc')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-iso-gc">Select the GC ID of the animal you are isolating or returning to the colony. Isolation means moving the animal away from all others until it is fully healthy for 72+ hours.</div>
+        <select class="gc-id-selector" id="ev-iso-gc-id" onchange="showAnimalInfo('ev-iso-gc-id','iso-animal-info')">
+          <option value="">Select GC ID...</option>
+        </select>
+        <div class="gc-selected-info" id="iso-animal-info"></div>
+      </div>
+      <div class="fg">
+        <label class="fl">Action *</label>
         <select class="fs" id="ev-iso-action">
-          <option value="isolate">Isolate animal</option>
-          <option value="return">Return animal to cage</option>
+          <option value="isolate">Isolating this animal (moving away from colony)</option>
+          <option value="return">Returning to colony (fully healthy 72+ hrs)</option>
         </select>
       </div>
-      <div class="fg"><label class="fl">Reason</label><input class="fi" type="text" id="ev-iso-reason" placeholder="e.g. sick, post-birth, aggressive"/></div>
+      <div class="fg"><label class="fl">Reason / Symptoms</label><input class="fi" type="text" id="ev-iso-reason" placeholder="e.g. rough coat, not eating, runny nose"/></div>
       <button class="btn btn-amber" onclick="submitEvent('isolate')">🔒 Log Isolation Update</button>
     </div>
 
@@ -804,7 +913,14 @@ body::after{
     <!-- MATERNITY ENTRY -->
     <div class="event-panel" id="ep-maternity">
       <div class="event-note">Log when a pregnant female moves into a maternity cage. She stays until pups are 6 weeks old. Grease the cage hinges before she enters — silent door operation is required.</div>
-      <div class="fg"><label class="fl">Female ID (e.g. BA-F1) *</label><input class="fi" type="text" id="ev-mat-id" placeholder="BA-F1" style="text-transform:uppercase"/></div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Female GC ID * <button class="info-btn" onclick="showInfo('info-mat-gc')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-mat-gc">Select the GC ID of the pregnant female. Founding females are GC-F-002 through GC-F-005. The system links this maternity entry to her full breeding history automatically.</div>
+        <select class="gc-id-selector" id="ev-mat-gc-id" onchange="showAnimalInfo('ev-mat-gc-id','mat-animal-info')">
+          <option value="">Select female GC ID...</option>
+        </select>
+        <div class="gc-selected-info" id="mat-animal-info"></div>
+      </div>
       <div class="fg">
         <label class="fl">Action *</label>
         <select class="fs" id="ev-mat-action">
@@ -827,7 +943,21 @@ body::after{
     <!-- WEANING -->
     <div class="event-panel" id="ep-weaning">
       <div class="event-note">Log when pups are weaned at 6 weeks and moved from the maternity cage to the weaning cage. Male and female pups must be separated within the weaning cage before 10 weeks.</div>
-      <div class="fg"><label class="fl">Mother's ID (e.g. BA-F1) *</label><input class="fi" type="text" id="ev-wean-mother" placeholder="BA-F1" style="text-transform:uppercase"/></div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Mother's GC ID * <button class="info-btn" onclick="showInfo('info-wean-gc')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-wean-gc">Select the mother whose pups are being weaned. The system links this weaning event to her litter record and updates her pup survival count.</div>
+        <select class="gc-id-selector" id="ev-wean-gc-id" onchange="showAnimalInfo('ev-wean-gc-id','wean-animal-info')">
+          <option value="">Select mother's GC ID...</option>
+        </select>
+        <div class="gc-selected-info" id="wean-animal-info"></div>
+      </div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Litter ID <button class="info-btn" onclick="showInfo('info-wean-litter')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-wean-litter">The Litter ID of the pups being weaned. This was auto-generated when the birth was logged. Select it here to link this weaning event to the correct litter record.</div>
+        <select class="gc-id-selector" id="ev-wean-litter-id">
+          <option value="">Select litter ID...</option>
+        </select>
+      </div>
       <div class="form-row">
         <div class="fg"><label class="fl">Total Pups Weaned *</label><input class="fi" type="number" id="ev-wean-total" min="0" placeholder="0"/></div>
         <div class="fg"><label class="fl">Male Pups</label><input class="fi" type="number" id="ev-wean-males" min="0" placeholder="0"/></div>
@@ -839,14 +969,32 @@ body::after{
 
     <!-- GROW-OUT MOVE -->
     <div class="event-panel" id="ep-growout">
-      <div class="event-note">Log when a growing male is moved into an individual grow-out slot. Must happen before 12 weeks — do not wait until fighting starts. One male per slot, no exceptions.</div>
-      <div class="form-row">
-        <div class="fg"><label class="fl">Pup Birth Date *</label><input class="fi" type="date" id="ev-go-birthdate"/></div>
-        <div class="fg"><label class="fl">Grow-Out Slot *</label><input class="fi" type="text" id="ev-go-slot" placeholder="e.g. G01" style="text-transform:uppercase"/></div>
+      <div class="event-note">Log when a growing male is moved into an individual grow-out slot. This is when his GC ID is assigned and the physical leg band goes on. Must happen before 12 weeks. One male per slot — no exceptions.</div>
+      <div class="fg">
+        <label class="fl" style="display:flex;align-items:center;gap:6px;">Litter ID (which litter is this pup from?) * <button class="info-btn" onclick="showInfo('info-go-litter')">ⓘ</button></label>
+        <div class="info-tooltip hidden" id="info-go-litter">Select the Litter ID this pup belongs to. The system will assign the next available GC ID from that litter's reserved block and record the lineage (mother + father).</div>
+        <select class="gc-id-selector" id="ev-go-litter-id" onchange="onGrowOutLitterSelect()">
+          <option value="">Select litter ID...</option>
+        </select>
       </div>
-      <div class="fg"><label class="fl">Mother's ID</label><input class="fi" type="text" id="ev-go-mother" placeholder="BA-F1" style="text-transform:uppercase"/></div>
-      <div class="fg"><label class="fl">Notes (optional)</label><input class="fi" type="text" id="ev-go-notes" placeholder="e.g. good size, healthy coat"/></div>
-      <button class="btn btn-amber" onclick="submitEvent('growout')">📦 Log Grow-Out Move</button>
+      <div class="fg">
+        <label class="fl">Assigned GC ID (auto-generated)</label>
+        <input class="fi" type="text" id="ev-go-assigned-gc-id" placeholder="Will fill automatically" readonly style="opacity:.7;"/>
+      </div>
+      <div class="fg">
+        <label class="fl">Grow-Out Slot *</label>
+        <input class="fi" type="text" id="ev-go-slot" placeholder="e.g. G-01, G-02 ... G-24" style="text-transform:uppercase"/>
+      </div>
+      <div style="background:rgba(224,82,82,.08);border:1px solid rgba(224,82,82,.25);border-radius:8px;padding:12px 14px;margin:10px 0;">
+        <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+          <input type="checkbox" id="ev-go-tagged-confirm" style="margin-top:3px;width:18px;height:18px;flex-shrink:0;accent-color:var(--sage);"/>
+          <span style="font-size:.82rem;color:#ffaaaa;line-height:1.6;">
+            <b style="color:var(--danger);">I confirm the physical leg band has been applied</b> to this animal with the GC ID written on it or attached to it. The ID does not become active until the band is on.
+          </span>
+        </label>
+      </div>
+      <div class="fg"><label class="fl">Notes (optional)</label><input class="fi" type="text" id="ev-go-notes" placeholder="e.g. good size, healthy coat, approx weight"/></div>
+      <button class="btn btn-amber" onclick="submitEvent('growout')">📦 Log Grow-Out Move + Tag Applied</button>
     </div>
 
     <!-- BACKDATED ENTRY REQUEST -->
@@ -931,29 +1079,96 @@ body::after{
   </div>
 </div>
 
+<!-- ── CARD: GC ID LEGEND ── -->
+<div class="card" id="gc-legend-card">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">🏷️</span> Animal ID System — Read This First</span>
+  </div>
+  <div class="card-body">
+    <div style="font-family:var(--font-mono);font-size:.62rem;color:var(--amber-soft);background:rgba(232,137,12,.07);border:1px solid rgba(232,137,12,.2);border-radius:8px;padding:12px 14px;margin-bottom:14px;line-height:1.8;">
+      Every animal on this farm has a permanent ID. This ID never changes, even if the animal moves cages or changes role. Always use the ID when logging events — never describe an animal by colour or size alone.
+    </div>
+
+    <!-- FORMAT EXPLANATION -->
+    <div style="margin-bottom:16px;">
+      <div style="font-family:var(--font-mono);font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:10px;">How to Read an ID</div>
+
+      <div class="gc-format-block">
+        <div class="gc-format-row">
+          <div class="gc-code">GC-F-001</div>
+          <div class="gc-explain">
+            <span class="gc-part"><b>GC</b> = Grasscutter (every animal on this farm)</span>
+            <span class="gc-part"><b>F</b> = Founder — this animal was NOT born on this farm. It came with the original colony on Day 1.</span>
+            <span class="gc-part"><b>001</b> = Registration number. First animal registered = 001, second = 002, and so on.</span>
+          </div>
+        </div>
+        <div class="gc-format-row" style="margin-top:10px;">
+          <div class="gc-code">GC-25-001</div>
+          <div class="gc-explain">
+            <span class="gc-part"><b>GC</b> = Grasscutter</span>
+            <span class="gc-part"><b>25</b> = Year of birth (2025). Born in 2026 = GC-26-001.</span>
+            <span class="gc-part"><b>001</b> = First animal born on this farm in that year.</span>
+          </div>
+        </div>
+        <div class="gc-format-row" style="margin-top:10px;">
+          <div class="gc-code">LIT-GC-F-002-01</div>
+          <div class="gc-explain">
+            <span class="gc-part"><b>LIT</b> = Litter (a group of pups born together)</span>
+            <span class="gc-part"><b>GC-F-002</b> = The mother's ID</span>
+            <span class="gc-part"><b>01</b> = This is her first litter. Second litter = 02, and so on.</span>
+            <span class="gc-part" style="color:var(--amber-soft);">All pups from the same birth share this Litter ID until they are individually tagged at 10–12 weeks.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLOT LABELS EXPLANATION -->
+    <div style="margin-bottom:16px;">
+      <div style="font-family:var(--font-mono);font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--amber);margin-bottom:10px;">Slot Labels — Where an Animal Lives</div>
+      <div style="font-size:.82rem;color:var(--cream-dim);line-height:1.7;background:rgba(255,255,255,.02);border:1px solid var(--bark);border-radius:8px;padding:12px 14px;">
+        Slot labels (BA-F1, BB-F2, G-07, MH, M1 etc.) describe <b style="color:var(--cream)">where an animal currently is</b>, not who it is. A slot label can change — if a female moves to a maternity cage, her slot changes but her GC ID stays the same forever.<br><br>
+        <b style="color:var(--cream)">Always use the GC ID when logging. Use the slot label only to describe location.</b>
+      </div>
+    </div>
+
+    <!-- PHYSICAL TAGGING RULE -->
+    <div style="background:rgba(224,82,82,.07);border:1px solid rgba(224,82,82,.25);border-radius:8px;padding:12px 14px;">
+      <div style="font-family:var(--font-mono);font-size:.58rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--danger);margin-bottom:6px;">Physical Leg Band Rule</div>
+      <div style="font-size:.82rem;color:#ffaaaa;line-height:1.7;">
+        Pups cannot be physically tagged at birth — they are too small. The physical leg band goes on at <b>10–12 weeks</b>, when the growing male is moved to his individual grow-out slot. That is the exact moment the GC ID becomes fully active.<br><br>
+        Before 10 weeks → pups are tracked as a group under the Litter ID.<br>
+        At 10–12 weeks → individual GC ID assigned, physical band applied, full individual tracking begins.
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ── CARD: ANIMAL ID REFERENCE ── -->
 <div class="card">
   <div class="card-head">
-    <span class="card-label"><span class="icon">🏷️</span> Animal ID Reference</span>
+    <span class="card-label"><span class="icon">📋</span> Registered Animals — ID Reference</span>
+    <button class="info-btn" onclick="showInfo('id-ref-info')">ⓘ</button>
+  </div>
+  <div class="info-tooltip hidden" id="id-ref-info">
+    This table shows every animal currently registered on the farm. GC ID = permanent identity. Slot = current location. Tag Status = whether a physical leg band has been applied. Never log an event without confirming the GC ID first.
   </div>
   <div class="card-body">
-    <div style="font-family:var(--font-mono);font-size:.62rem;color:var(--amber-soft);background:rgba(232,137,12,.07);border:1px solid rgba(232,137,12,.2);border-radius:8px;padding:10px 12px;margin-bottom:14px;line-height:1.6;">All animals are hybrid. Use this table to identify each animal at a glance. Never guess — always confirm the ID before logging any event.</div>
-    <table style="width:100%;border-collapse:collapse;font-size:.78rem;">
-      <thead>
-        <tr>
-          <th style="background:rgba(232,137,12,.15);color:var(--amber);font-family:var(--font-mono);font-size:.58rem;letter-spacing:1.5px;text-transform:uppercase;padding:9px 10px;text-align:left;border-bottom:1px solid var(--clay);">ID</th>
-          <th style="background:rgba(232,137,12,.15);color:var(--amber);font-family:var(--font-mono);font-size:.58rem;letter-spacing:1.5px;text-transform:uppercase;padding:9px 10px;text-align:left;border-bottom:1px solid var(--clay);">Role</th>
-          <th style="background:rgba(232,137,12,.15);color:var(--amber);font-family:var(--font-mono);font-size:.58rem;letter-spacing:1.5px;text-transform:uppercase;padding:9px 10px;text-align:left;border-bottom:1px solid var(--clay);">Marker</th>
-        </tr>
-      </thead>
-      <tbody id="animal-id-table">
-        <tr><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream);font-family:var(--font-mono);">BM-01</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">Breeding Male</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">No band</td></tr>
-        <tr><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream);font-family:var(--font-mono);">BA-F1</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">Batch A — Female 1</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">Red band, left leg</td></tr>
-        <tr><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream);font-family:var(--font-mono);">BA-F2</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">Batch A — Female 2</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">Red band, right leg</td></tr>
-        <tr><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream);font-family:var(--font-mono);">BB-F1</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">Batch B — Female 1</td><td style="padding:8px 10px;border-bottom:1px solid rgba(255,255,255,.05);color:var(--cream-dim);">Blue band, left leg</td></tr>
-        <tr><td style="padding:8px 10px;color:var(--cream);font-family:var(--font-mono);">BB-F2</td><td style="padding:8px 10px;color:var(--cream-dim);">Batch B — Female 2</td><td style="padding:8px 10px;color:var(--cream-dim);">Blue band, right leg</td></tr>
-      </tbody>
-    </table>
+    <div id="animal-registry-table">
+      <div style="font-family:var(--font-mono);font-size:.7rem;color:var(--cream-dim);text-align:center;padding:16px 0;">Loading animal registry...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── CARD: PENDING PHYSICAL TAGS ── -->
+<div class="card" id="pending-tags-card" style="display:none;">
+  <div class="card-head">
+    <span class="card-label"><span class="icon">⚠️</span> Pending Physical Tags</span>
+    <button class="info-btn" onclick="showInfo('pending-tags-info')">ⓘ</button>
+  </div>
+  <div class="info-tooltip hidden" id="pending-tags-info">
+    These animals have a GC ID reserved in the system but do not have a physical leg band yet. Every animal here needs a band applied when it reaches 10–12 weeks. You cannot log a grow-out move without confirming the band was applied.
+  </div>
+  <div class="card-body" id="pending-tags-body">
   </div>
 </div>
 
@@ -1027,6 +1242,12 @@ async function onLoggedIn() {
   loadColonyConfig();
   renderHealthRows();
   renderRotationTracker();
+  // GC ID system
+  await loadActiveAnimals();
+  await ensureFoundingGcIds();
+  populateGcSelectors();
+  renderAnimalRegistry();
+  renderPendingTags();
 }
 
 /* ══ SETUP LOGIC ═════════════════════════════════════ */
@@ -1529,7 +1750,246 @@ async function submitReport(){
   }catch{toast('❌ Failed. Try again.',true);b.disabled=false;b.textContent='📤 Submit Weekly Report';}
 }
 
-/* ══ COLONY EVENTS ═══════════════════════════════════ */
+/* ══ GC ID SYSTEM ════════════════════════════════════ */
+
+// In-memory store of active animals loaded from Supabase
+let activeAnimals = [];
+let activeLitters = [];
+
+function showInfo(id) {
+  const el = document.getElementById(id);
+  if(!el) return;
+  el.classList.toggle('hidden');
+}
+
+function showAnimalInfo(selectId, infoId) {
+  const gcId = document.getElementById(selectId).value;
+  const infoEl = document.getElementById(infoId);
+  if(!gcId || !infoEl) { if(infoEl) infoEl.classList.remove('show'); return; }
+  const animal = activeAnimals.find(a => a.gc_id === gcId);
+  if(!animal) { infoEl.classList.remove('show'); return; }
+  const isFounder = gcId.startsWith('GC-F-');
+  const motherStr = animal.mother_gc_id ? `Mother: ${animal.mother_gc_id}` : '';
+  const fatherStr = animal.father_gc_id ? `Father: ${animal.father_gc_id}` : '';
+  const litterStr = animal.litter_id ? `Litter: ${animal.litter_id}` : '';
+  const tagStr = animal.physically_tagged ? '✅ Physically tagged' : '⏳ Not yet physically tagged';
+  infoEl.innerHTML = [
+    `<b>${gcId}</b> — ${animal.slot_id || '—'} — ${roleLabel(animal.role || 'unknown')}`,
+    isFounder ? '🐾 Founding animal — came with original colony' : '',
+    motherStr, fatherStr, litterStr,
+    `Born: ${animal.birth_date || 'unknown'}`,
+    tagStr,
+    animal.is_elite ? '⭐ Elite breeder' : '',
+  ].filter(Boolean).join('<br>');
+  infoEl.classList.add('show');
+}
+
+function roleLabel(role) {
+  const map = {
+    breeding_female:'Breeding Female',
+    breeding_male:'Breeding Male',
+    growing_male:'Growing Male',
+    replacement_female:'Replacement Breeder',
+    retired:'Retired',
+  };
+  return map[role] || role;
+}
+
+async function loadActiveAnimals() {
+  try {
+    const { data } = await sb.from('colony_animals')
+      .select('gc_id,slot_id,role,mother_gc_id,father_gc_id,litter_id,birth_date,physically_tagged,tagged_at,is_current,is_elite,isolated,acquired_on,died_on')
+      .eq('is_current', true)
+      .order('gc_id', { ascending: true });
+    activeAnimals = (data || []).filter(a => a.gc_id);
+
+    // Load litter groups from birth events
+    const { data: evts } = await sb.from('colony_events')
+      .select('litter_id, animal_id, gc_id, event_date')
+      .eq('event_type', 'birth')
+      .not('litter_id', 'is', null);
+    activeLitters = evts || [];
+  } catch(e) {
+    console.error('loadActiveAnimals:', e);
+  }
+}
+
+function populateGcSelectors() {
+  // Selectors that show all active animals
+  const allSelectors = ['ev-death-gc-id','ev-iso-gc-id'];
+  // Selectors that show only breeding females
+  const femaleSelectors = ['ev-birth-mother-gc','ev-mat-gc-id','ev-wean-gc-id'];
+
+  allSelectors.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = '<option value="">Select GC ID...</option>' +
+      activeAnimals.map(a =>
+        `<option value="${a.gc_id}">${a.gc_id} — ${a.slot_id||'?'} — ${roleLabel(a.role||'?')}</option>`
+      ).join('');
+  });
+
+  femaleSelectors.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    const females = activeAnimals.filter(a =>
+      a.role === 'breeding_female' || a.role === 'replacement_female'
+    );
+    el.innerHTML = '<option value="">Select female GC ID...</option>' +
+      females.map(a =>
+        `<option value="${a.gc_id}">${a.gc_id} — ${a.slot_id||'?'} — ${roleLabel(a.role)}</option>`
+      ).join('');
+  });
+
+  // Litter selectors
+  const litterSelectors = ['ev-wean-litter-id','ev-go-litter-id'];
+  const uniqueLitters = [...new Set(activeLitters.map(e => e.litter_id).filter(Boolean))];
+  litterSelectors.forEach(id => {
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.innerHTML = '<option value="">Select litter ID...</option>' +
+      uniqueLitters.map(lid =>
+        `<option value="${lid}">${lid}</option>`
+      ).join('');
+  });
+}
+
+async function onMotherSelect() {
+  const gcId = document.getElementById('ev-birth-mother-gc').value;
+  showAnimalInfo('ev-birth-mother-gc','birth-mother-info');
+  if(!gcId) { document.getElementById('ev-birth-litter-id').value=''; return; }
+
+  // Count existing litters for this mother
+  const motherLitters = activeLitters.filter(e => e.gc_id === gcId || e.animal_id === gcId);
+  const nextLitterNum = motherLitters.length + 1;
+  const litterId = `LIT-${gcId}-${String(nextLitterNum).padStart(2,'0')}`;
+  document.getElementById('ev-birth-litter-id').value = litterId;
+}
+
+async function onGrowOutLitterSelect() {
+  const litterId = document.getElementById('ev-go-litter-id').value;
+  if(!litterId) { document.getElementById('ev-go-assigned-gc-id').value=''; return; }
+
+  // Count how many GC IDs already assigned from this litter (already moved to grow-out)
+  const { data: existing } = await sb.from('colony_animals')
+    .select('gc_id').eq('litter_id', litterId);
+  const nextNum = (existing||[]).length + 1;
+
+  // Generate next GC ID — year from litter ID
+  const yearMatch = litterId.match(/GC-(\d{2})-/);
+  const year = yearMatch ? yearMatch[1] : String(new Date().getFullYear()).slice(-2);
+
+  // Get global count of born animals this year for sequential numbering
+  const { data: yearAnimals } = await sb.from('colony_animals')
+    .select('gc_id')
+    .like('gc_id', `GC-${year}-%`);
+  const globalCount = (yearAnimals||[]).length + 1;
+  const newGcId = `GC-${year}-${String(globalCount).padStart(3,'0')}`;
+  document.getElementById('ev-go-assigned-gc-id').value = newGcId;
+}
+
+/* ── Generate founding GC IDs if not yet set ── */
+async function ensureFoundingGcIds() {
+  const foundingMap = {
+    'BM-01': 'GC-F-001',
+    'BA-F1': 'GC-F-002',
+    'BA-F2': 'GC-F-003',
+    'BB-F1': 'GC-F-004',
+    'BB-F2': 'GC-F-005',
+  };
+  for (const [slotId, gcId] of Object.entries(foundingMap)) {
+    const existing = activeAnimals.find(a => a.slot_id === slotId);
+    if (existing && !existing.gc_id) {
+      await sb.from('colony_animals')
+        .update({ gc_id: gcId, physically_tagged: true, tagged_at: existing.acquired_on || null })
+        .eq('slot_id', slotId)
+        .eq('is_current', true);
+    }
+  }
+  // Reload after update
+  await loadActiveAnimals();
+}
+
+/* ── RENDER ANIMAL REGISTRY TABLE ── */
+function renderAnimalRegistry() {
+  const el = document.getElementById('animal-registry-table');
+  if(!el) return;
+
+  if(!activeAnimals.length) {
+    el.innerHTML = '<div style="font-family:var(--font-mono);font-size:.7rem;color:var(--cream-dim);text-align:center;padding:16px;">No animals registered yet. Animals appear here after the farm is set up in the Owner Dashboard.</div>';
+    return;
+  }
+
+  const roleOrder = { breeding_male:0, breeding_female:1, replacement_female:2, growing_male:3, retired:4 };
+  const sorted = [...activeAnimals].sort((a,b) =>
+    (roleOrder[a.role]??5) - (roleOrder[b.role]??5)
+  );
+
+  el.innerHTML = `
+    <table class="registry-table">
+      <thead>
+        <tr>
+          <th>GC ID <button class="info-btn" style="font-size:.5rem;padding:2px 6px;" onclick="showInfo('reg-gcid-info')">ⓘ</button></th>
+          <th>Slot</th>
+          <th>Role</th>
+          <th>Tag</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${sorted.map(a => `
+          <tr>
+            <td class="reg-gc-id">${a.gc_id||'—'}${a.is_elite?'<br><span style="font-size:.5rem;color:var(--amber);">⭐ Elite</span>':''}</td>
+            <td class="reg-slot">${a.slot_id||'—'}${a.isolated?'<br><span style="color:var(--danger);font-size:.55rem;">ISOLATED</span>':''}</td>
+            <td class="reg-role">${roleLabel(a.role||'unknown')}</td>
+            <td><span class="reg-tag ${a.physically_tagged?'tagged':'untagged'}">${a.physically_tagged?'✅ Tagged':'⏳ Pending'}</span></td>
+          </tr>`).join('')}
+      </tbody>
+    </table>
+    <div class="info-tooltip hidden" id="reg-gcid-info" style="margin:10px 0 0;">GC-F-XXX = Founding animal (came with original colony on Day 1). GC-YY-XXX = Born on this farm (YY = year of birth, XXX = sequential number). A tag marked Pending means the physical leg band has not yet been applied — this happens at 10–12 weeks during grow-out move.</div>`;
+}
+
+/* ── RENDER PENDING PHYSICAL TAGS ── */
+function renderPendingTags() {
+  const card = document.getElementById('pending-tags-card');
+  const body = document.getElementById('pending-tags-body');
+
+  // Find litters with untagged pups (born but not yet in grow-out)
+  const litterGroups = {};
+  activeLitters.forEach(e => {
+    if(!e.litter_id) return;
+    if(!litterGroups[e.litter_id]) {
+      litterGroups[e.litter_id] = { litter_id: e.litter_id, date: e.event_date, gc_id: e.gc_id || e.animal_id };
+    }
+  });
+
+  // Check which litters already have individually tagged animals in grow-out
+  const taggedLitters = new Set(
+    activeAnimals.filter(a => a.litter_id && a.physically_tagged && a.role === 'growing_male')
+      .map(a => a.litter_id)
+  );
+
+  const pending = Object.values(litterGroups).filter(l => !taggedLitters.has(l.litter_id));
+
+  if(!pending.length) { card.style.display='none'; return; }
+  card.style.display = 'block';
+
+  const now = Date.now();
+  body.innerHTML = pending.map(l => {
+    const birthDate = new Date(l.date);
+    const weeksOld = Math.floor((now - birthDate) / (7*86400000));
+    const isUrgent = weeksOld >= 10;
+    return `<div class="pending-tag-row">
+      <div class="ptag-litter">Litter ID: ${l.litter_id}</div>
+      <div class="ptag-info">Mother: <b style="color:var(--cream)">${l.gc_id||'—'}</b></div>
+      <div class="ptag-age ${isUrgent?'ptag-urgent':''}">
+        Born: ${l.date} · ${weeksOld} week${weeksOld!==1?'s':''} old
+        ${isUrgent ? ' ⚠️ TAGGING DUE — move to grow-out slot now' : weeksOld >= 8 ? ' · Tagging coming up soon' : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ══ UPDATED submitEvent ═════════════════════════════ */
 function switchEventTab(tab) {
   const tabs = ['birth','death','replace','isolate','rotate','maternity','weaning','growout','backdate'];
   document.querySelectorAll('.event-tab').forEach((t,i) => {
@@ -1555,43 +2015,47 @@ async function submitEvent(type) {
   };
 
   if (type === 'birth') {
-    const slot = document.getElementById('ev-birth-slot').value.trim().toUpperCase();
-    if (!slot) { toast('⚠️ Female ID is required.', true); return; }
-    try {
-      const { data: animalData } = await sb.from('colony_animals').select('is_elite').eq('slot_id', slot).eq('is_current', true).single();
-      if (animalData && animalData.is_elite) {
-        toast('⭐ ELITE BREEDER — Log this litter carefully. Every pup counts.', false);
-      }
-    } catch(e) {}
-    payload.animal_id     = slot;
-    payload.batch         = document.getElementById('ev-birth-batch').value || '';
-    payload.pups_born     = parseInt(document.getElementById('ev-birth-born').value) || 0;
-    payload.pups_24hr     = parseInt(document.getElementById('ev-birth-24hr').value) || 0;
-    payload.pups_survived = parseInt(document.getElementById('ev-birth-survived').value) || 0;
-    payload.notes         = document.getElementById('ev-birth-notes').value || '';
+    const motherGcId = document.getElementById('ev-birth-mother-gc').value;
+    if (!motherGcId) { toast('⚠️ Select the mother\'s GC ID.', true); return; }
+    const litterId = document.getElementById('ev-birth-litter-id').value;
+    if (!litterId) { toast('⚠️ Litter ID is missing — re-select the mother.', true); return; }
+    const animal = activeAnimals.find(a => a.gc_id === motherGcId);
+    if (animal && animal.is_elite) toast('⭐ ELITE BREEDER — Log this litter carefully. Every pup counts.', false);
+    payload.gc_id        = motherGcId;
+    payload.animal_id    = animal ? animal.slot_id : motherGcId;
+    payload.litter_id    = litterId;
+    payload.batch        = animal ? (animal.slot_id||'').startsWith('BA') ? 'A' : 'B' : '';
+    payload.pups_born    = parseInt(document.getElementById('ev-birth-born').value) || 0;
+    payload.pups_24hr    = parseInt(document.getElementById('ev-birth-24hr').value) || 0;
+    payload.pups_survived= parseInt(document.getElementById('ev-birth-survived').value) || 0;
+    payload.notes        = document.getElementById('ev-birth-notes').value || '';
   } else if (type === 'death') {
-    const slot = document.getElementById('ev-death-slot').value.trim().toUpperCase();
-    if (!slot) { toast('⚠️ Animal ID is required.', true); return; }
+    const gcId = document.getElementById('ev-death-gc-id').value;
+    if (!gcId) { toast('⚠️ Select the animal\'s GC ID.', true); return; }
     const cause = document.getElementById('ev-death-cause').value;
     if (!cause) { toast('⚠️ Please select a cause of death.', true); return; }
-    payload.animal_id = slot;
+    const animal = activeAnimals.find(a => a.gc_id === gcId);
+    payload.gc_id     = gcId;
+    payload.animal_id = animal ? animal.slot_id : gcId;
     payload.cause     = cause;
     payload.notes     = document.getElementById('ev-death-notes').value || '';
     if (cause === 'disease_suspected') {
       toast('🔴 Disease suspected — contact the owner TODAY. Do not wait for Sunday.', false);
     }
   } else if (type === 'replace') {
-    const slot = document.getElementById('ev-rep-slot').value.trim().toUpperCase();
-    if (!slot) { toast('⚠️ Slot ID is required.', true); return; }
+    const slot = document.getElementById('ev-rep-slot').value;
+    if (!slot) { toast('⚠️ Slot is required.', true); return; }
     payload.animal_id = slot;
     payload.source    = document.getElementById('ev-rep-source').value || '';
     payload.notes     = document.getElementById('ev-rep-notes').value || '';
   } else if (type === 'isolate') {
-    const slot = document.getElementById('ev-iso-slot').value.trim().toUpperCase();
-    if (!slot) { toast('⚠️ Animal ID is required.', true); return; }
-    payload.animal_id    = slot;
-    payload.iso_action   = document.getElementById('ev-iso-action').value;
-    payload.reason       = document.getElementById('ev-iso-reason').value || '';
+    const gcId = document.getElementById('ev-iso-gc-id').value;
+    if (!gcId) { toast('⚠️ Select the animal\'s GC ID.', true); return; }
+    const animal = activeAnimals.find(a => a.gc_id === gcId);
+    payload.gc_id      = gcId;
+    payload.animal_id  = animal ? animal.slot_id : gcId;
+    payload.iso_action = document.getElementById('ev-iso-action').value;
+    payload.reason     = document.getElementById('ev-iso-reason').value || '';
   } else if (type === 'rotate') {
     const from = document.getElementById('ev-rot-from').value;
     const to   = document.getElementById('ev-rot-to').value;
@@ -1611,30 +2075,60 @@ async function submitEvent(type) {
     }
     payload.notes = document.getElementById('ev-rot-reason').value || '';
   } else if (type === 'maternity') {
-    const id = document.getElementById('ev-mat-id').value.trim().toUpperCase();
-    if (!id) { toast('⚠️ Female ID is required.', true); return; }
-    payload.animal_id     = id;
-    payload.mat_action    = document.getElementById('ev-mat-action').value;
-    payload.due_date      = document.getElementById('ev-mat-duedate').value || '';
+    const gcId = document.getElementById('ev-mat-gc-id').value;
+    if (!gcId) { toast('⚠️ Select the female\'s GC ID.', true); return; }
+    const animal = activeAnimals.find(a => a.gc_id === gcId);
+    payload.gc_id          = gcId;
+    payload.animal_id      = animal ? animal.slot_id : gcId;
+    payload.mat_action     = document.getElementById('ev-mat-action').value;
+    payload.due_date       = document.getElementById('ev-mat-duedate').value || '';
     payload.maternity_cage = document.getElementById('ev-mat-cage').value || '';
   } else if (type === 'weaning') {
-    const mother = document.getElementById('ev-wean-mother').value.trim().toUpperCase();
-    if (!mother) { toast('⚠️ Mother ID is required.', true); return; }
+    const gcId = document.getElementById('ev-wean-gc-id').value;
+    if (!gcId) { toast('⚠️ Select the mother\'s GC ID.', true); return; }
     const total = parseInt(document.getElementById('ev-wean-total').value) || 0;
     if (!total) { toast('⚠️ Pup count is required.', true); return; }
-    payload.animal_id    = mother;
+    const animal = activeAnimals.find(a => a.gc_id === gcId);
+    payload.gc_id        = gcId;
+    payload.litter_id    = document.getElementById('ev-wean-litter-id').value || '';
+    payload.animal_id    = animal ? animal.slot_id : gcId;
     payload.pups_weaned  = total;
     payload.male_pups    = parseInt(document.getElementById('ev-wean-males').value) || 0;
     payload.female_pups  = parseInt(document.getElementById('ev-wean-females').value) || 0;
     payload.notes        = document.getElementById('ev-wean-notes').value || '';
-    if(total >= 5) toast('🌟 Strong litter! Log the male pups — they go to grow-out slots at 10 weeks.');
+    if(total >= 5) toast('🌟 Strong litter! Male pups go to individual grow-out slots at 10 weeks.');
   } else if (type === 'growout') {
+    const litterId = document.getElementById('ev-go-litter-id').value;
+    const assignedGcId = document.getElementById('ev-go-assigned-gc-id').value;
     const slot = document.getElementById('ev-go-slot').value.trim().toUpperCase();
+    const tagConfirmed = document.getElementById('ev-go-tagged-confirm').checked;
+    if (!litterId) { toast('⚠️ Select the litter ID.', true); return; }
     if (!slot) { toast('⚠️ Grow-out slot is required.', true); return; }
-    payload.slot_id      = slot;
-    payload.birth_date   = document.getElementById('ev-go-birthdate').value || '';
-    payload.mother_id    = document.getElementById('ev-go-mother').value.toUpperCase() || '';
-    payload.notes        = document.getElementById('ev-go-notes').value || '';
+    if (!tagConfirmed) { toast('⚠️ Confirm the physical leg band has been applied before logging.', true); return; }
+    if (!assignedGcId) { toast('⚠️ GC ID not generated — re-select the litter.', true); return; }
+    payload.gc_id           = assignedGcId;
+    payload.litter_id       = litterId;
+    payload.slot_id         = slot;
+    payload.notes           = document.getElementById('ev-go-notes').value || '';
+    // Also insert new animal record for this growing male
+    const litterRef = activeLitters.find(e => e.litter_id === litterId);
+    await sb.from('colony_animals').insert({
+      gc_id:             assignedGcId,
+      slot_id:           slot,
+      role:              'growing_male',
+      litter_id:         litterId,
+      mother_gc_id:      litterRef ? (litterRef.gc_id || litterRef.animal_id) : null,
+      physically_tagged: true,
+      tagged_at:         todayKey(),
+      is_current:        true,
+      isolated:          false,
+      is_elite:          false,
+    });
+    toast('🏷️ GC ID ' + assignedGcId + ' assigned. Physical band confirmed. Grow-out move logged.');
+    await loadActiveAnimals();
+    populateGcSelectors();
+    renderAnimalRegistry();
+    renderPendingTags();
   } else if (type === 'backdate') {
     const from = document.getElementById('ev-bd-from').value;
     const to   = document.getElementById('ev-bd-to').value;
@@ -1659,17 +2153,23 @@ async function submitEvent(type) {
     }
   }
 
-  // Side effects
+  // Side effects — use gc_id when available, fall back to slot_id
   if (type === 'isolate') {
     const isIsolating = payload.iso_action === 'isolate';
-    await sb.from('colony_animals')
+    const q = sb.from('colony_animals')
       .update({ isolated: isIsolating, isolated_since: isIsolating ? new Date().toISOString() : null })
-      .eq('slot_id', payload.animal_id).eq('is_current', true);
+      .eq('is_current', true);
+    if(payload.gc_id) await q.eq('gc_id', payload.gc_id);
+    else await q.eq('slot_id', payload.animal_id);
+    await loadActiveAnimals(); populateGcSelectors(); renderAnimalRegistry();
   }
   if (type === 'death') {
-    await sb.from('colony_animals')
+    const q = sb.from('colony_animals')
       .update({ is_current: false, died_on: todayKey() })
-      .eq('slot_id', payload.animal_id).eq('is_current', true);
+      .eq('is_current', true);
+    if(payload.gc_id) await q.eq('gc_id', payload.gc_id);
+    else await q.eq('slot_id', payload.animal_id);
+    await loadActiveAnimals(); populateGcSelectors(); renderAnimalRegistry(); renderPendingTags();
   }
   if(type === 'rotate') {
     const { error } = await sb.from('colony_events').insert(payload);
